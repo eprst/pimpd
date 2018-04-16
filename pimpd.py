@@ -69,11 +69,10 @@ mpd_connected = False
 mpd = MPDClient(use_unicode=True)
 mpd.timeout = MPD_TIMEOUT
 mpd.idletimeout = MPD_IDLETIMEOUT
-
-def scroll_text(draw, text, pos, offset, w = None)
-    if not w:
-        w = width - pos[0]
-    ts = draw.textsize(text, font=font)
+# def scroll_text(draw, text, pos, offset, w = None)
+#     if not w:
+#         w = width - pos[0]
+#     ts = draw.textsize(text, font=font)
     
 
 try:
