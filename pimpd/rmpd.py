@@ -13,11 +13,17 @@ class ReconnectingClient(MPDClient):
         self._host = None
         self._port = None
 
-        self._cond = threading.Condition()
+        self._threadResumeCond = threading.Condition()
+        self._threadStartedCond = threading.Condition()
+
         self._keepReconnecting = False
         self._reconnectThread = threading.Thread(target=self._reconnect)
         self._reconnectThread.setDaemon(True)
+
+        self._threadStartedCond.acquire()
         self._reconnectThread.start()
+        self._threadStartedCond.wait()
+        self._threadStartedCond.release()
 
     def disconnect(self):
         self._keepReconnecting = False
@@ -29,7 +35,7 @@ class ReconnectingClient(MPDClient):
         if timeout:
             self.timeout = timeout
 
-        self._cond.acquire()
+        self._threadResumeCond.acquire()
 
         try:
             if self.connected:
@@ -38,28 +44,36 @@ class ReconnectingClient(MPDClient):
             self._host = host
             self._port = port
             self._keepReconnecting = True
-            self._cond.notifyAll()
+            self._threadResumeCond.notifyAll()
 
         finally:
-            self._cond.release()
+            self._threadResumeCond.release()
 
     def _connection_lost(self, reason):
-        self._cond.acquire()
+        print("thread: acquiring threadResume")
+        self._threadResumeCond.acquire()
 
         try:
             self.lastConnectionFailure = reason
             if self.connected:
                 self.connected = False
                 super(ReconnectingClient, self).disconnect()
-            self._cond.notifyAll()
+            self._threadResumeCond.notifyAll()
         finally:
-            self._cond.release()
+            self._threadResumeCond.release()
 
     def _reconnect(self):
-        self._cond.acquire()
+        self._threadResumeCond.acquire()
+
+        # only needed the first time: notify constructor that
+        # thread has started and acquired _threadResumeCond
+        self._threadStartedCond.acquire()
+        self._threadStartedCond.notifyAll()
+        self._threadStartedCond.release()
+
         while True:
             if not self._keepReconnecting or self.connected:
-                self._cond.wait()
+                self._threadResumeCond.wait()
             else:  # Can there be spurious wake-ups in Python? Should we check again?
                 self.connectionStatus = "Connecting to %s:%s" % (self._host, self._port)
                 try:
