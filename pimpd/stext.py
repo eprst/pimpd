@@ -4,18 +4,18 @@ from widget import Widget
 
 
 class ScrollingText(Widget):
-    MAX_START_PAUSE = 10
+    MAX_PAUSE = 10
 
-    def __init__(self, size, font, text):
-        # type: (ScrollingText, (int, int), ImageFont, str) -> None
-        super(ScrollingText, self).__init__(size)
+    def __init__(self, position, size, font, text):
+        # type: (ScrollingText, (int, int), (int, int), ImageFont, str) -> None
+        super(ScrollingText, self).__init__(position, size)
         self._font = font
         self.set_text(text)
 
     # noinspection PyAttributeOutsideInit
     def set_text(self, text):
         self._text = text
-        self._start_pause = 0
+        self._pause = 0
         self._reversing = False
         self._offset = 0
         self._text_size = self._font.getsize(text)
@@ -24,14 +24,14 @@ class ScrollingText(Widget):
         return max(0, self._text_size[0] - self._size[0])
 
     def _update_offset(self):
-        if self._start_pause < self.MAX_START_PAUSE:
-            self._start_pause += 1
+        if self._pause < self.MAX_PAUSE:
+            self._pause += 1
         else:
             if self._reversing:
                 self._offset -= 1
                 if self._offset <= 0:
                     self._offset = 0
-                    self._start_pause = 0
+                    self._pause = 0
                     self._reversing = False
             else:
                 self._offset += 1
@@ -39,6 +39,7 @@ class ScrollingText(Widget):
                 if self._offset >= max_offset:
                     self._offset = max_offset
                     self._reversing = True
+                    self._pause = 0
 
     def _draw(self, draw):
         # type: (ScrollingText, ImageDraw) -> None
