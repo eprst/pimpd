@@ -11,6 +11,7 @@ from PIL import Image
 from PIL import ImageDraw
 from PIL import ImageFont
 from stext import ScrollingText
+from pbar import ProgressBar
 
 # Rotate by 180? That's the way I have my PI positioned, bonnet joystick on the right
 ROTATE = True
@@ -59,13 +60,22 @@ image = Image.new('1', (width, height))
 
 font = ImageFont.truetype("DejaVuSans.ttf", 12)
 stext = ScrollingText((10,10), (80,20), font, u'Hello::Привет!')
+pbar = ProgressBar((10,40), (80,10), 100)
+val = 0
 
 try:
     while 1:
         draw = ImageDraw.Draw(image)
         draw.rectangle((0,0,width,height), outline=0, fill=0)
+
+        if not GPIO.input(L_pin):
+            val = max(0, val-5)
+        if not GPIO.input(R_pin):
+            val = min(100, val+5)
+        pbar.set_value(val)
         
         stext.refresh(image, draw)
+        pbar.refresh(image, draw)
         
         if ROTATE:
             image = image.rotate(180)
