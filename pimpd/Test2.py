@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import RPi.GPIO as GPIO
 
 import time
@@ -15,7 +16,7 @@ from stext import ScrollingText
 ROTATE = True
 
 # Refresh rate
-REFRESH_RATE = 0.1
+REFRESH_RATE = 0.01
 
 # GPIO setup
 if ROTATE:
@@ -56,8 +57,8 @@ width = disp.width
 height = disp.height
 image = Image.new('1', (width, height))
 
-font = ImageFont.truetype("../abel-regular.ttf", 12)
-stext = ScrollingText((10,10), (40,20), font, "Hello, world!!!")
+font = ImageFont.truetype("DejaVuSans.ttf", 12)
+stext = ScrollingText((10,10), (80,20), font, u'Hello::Привет!')
 
 try:
     while 1:
