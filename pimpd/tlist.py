@@ -17,13 +17,13 @@ class TextList(Widget):
         height = size[1]
         assert width > 0
         assert height > 0
-        text_height = font.getsize("A")[1]
+        text_height = font.getsize("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz")[1]
         assert text_height > 0
 
         num_lines = int(math.ceil(float(height) / (text_height + self._text_margin)))
         self._lines = []
         for i in range(0, num_lines):
-            line_y = (i + 1) * text_height + i * self._text_margin
+            line_y = i * (text_height + self._text_margin)
             self._lines.append(ScrollingText(
                 (self._text_margin, line_y),
                 (width - 2 * self._text_margin, text_height),
@@ -35,11 +35,12 @@ class TextList(Widget):
         self._on_empty_items()
 
     def _middle_line(self):
-        return self._lines[len(self._lines) / 2]
+        return self._lines[(len(self._lines) - 1) / 2]
 
     def _on_empty_items(self):
         self._reset_lines()
         self._middle_line().set_text(self._emtpy_items_text)
+        self._middle_line().set_scroll(True)
         self._top_line_idx = None
         self._selected = None
 
@@ -90,14 +91,31 @@ class TextList(Widget):
         # s + n/2 = x*k + i
 
         k = len(self._items)
-        n = len(self._lines)
-        s = self._selected - n/2
-        # if s < 0:
-        #    s += k
+        n = min(k, len(self._lines))
+        s = self._selected - n/2 + 1
+        #if s < 0:
+        #   s += k
         if s < 0:
             s = 0
         elif s + n > k:
             s = k - n
+
+        # make bottom line fully vizible if it is selected
+        text_height = self._lines[0].size[1]
+        num_lines = len(self._lines)
+        if k * (text_height + self._text_margin) > self.size[1]:
+            if self._selected == k - 1:
+                y = self.size[1] - text_height
+                for i in range(0, num_lines):
+                    line = self._lines[num_lines - i - 1]
+                    line.set_position((self._text_margin, y))
+                    y -= text_height
+                    y -= self._text_margin
+            else:
+                for i in range(0, num_lines):
+                    y = i * (text_height + self._text_margin)
+                    line = self._lines[i]
+                    line.set_position((self._text_margin, y))
 
         for i in range(0, n):
             l = self._lines[i]

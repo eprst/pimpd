@@ -51,4 +51,5 @@ class ScrollingText(Widget):
         # type: (ScrollingText, ImageDraw) -> None
         super(ScrollingText, self)._draw(img, draw)
         self._update_offset()
-        draw.text((-self._offset, 0), self._text, font=self._font, fill=1)
+        y_offset = max(0, (self._size[1] - self._text_size[1])/2)
+        draw.text((-self._offset, y_offset), self._text, font=self._font, fill=1)

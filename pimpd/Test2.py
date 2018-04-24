@@ -3,6 +3,7 @@ import RPi.GPIO as GPIO
 
 import time
 import socket
+import threading
 
 import Adafruit_GPIO.SPI as SPI
 import Adafruit_SSD1306
@@ -60,13 +61,36 @@ height = disp.height
 image = Image.new('1', (width, height))
 
 font = ImageFont.truetype("DejaVuSans.ttf", 12)
-stext = ScrollingText((0, 0), (80, 20), font, u'Hello::Привет!')
-pbar = ProgressBar((0, 30), (80, 10), 100)
+stext = ScrollingText((0, 0), (40, 20), font, u'Hello::Привет!')
+# stext.set_draw_border(True)
+stext.set_invert(True)
+pbar = ProgressBar((0, 30), (40, 10), 100)
 val = 0
-tlist = TextList((85, 5), (42, 50), font, "no playlists")
+tlist = TextList((45, 5), (80, 55), font, "no playlists")
 tlist.set_draw_border(True)
+#tlist.set_items(["one one one one","two two two two","three three three three", "four", "five"])
+#tlist.set_items(["one one one one","two two two two","three three three three", "four"])
+#tlist.set_items(["one one one one","two two two two","three three three three"])
+#tlist.set_items(["one one one one","two two two two"])
+#tlist.set_items(["one one one one"])
+tlist.set_items([])
+
+lock = threading.Condition()
+
+def up_down_cb(channel):
+    lock.acquire()
+    if channel == U_pin:
+        tlist.select_previous()
+    elif channel == D_pin:
+        tlist.select_next()
+    elif channel == C_pin:
+        print "selected: %s" % str(tlist.selected)
+    lock.release()
 
 try:
+    GPIO.add_event_detect(U_pin, GPIO.RISING, callback=up_down_cb, bouncetime=200)
+    GPIO.add_event_detect(D_pin, GPIO.RISING, callback=up_down_cb, bouncetime=200)
+    GPIO.add_event_detect(C_pin, GPIO.RISING, callback=up_down_cb, bouncetime=200)
     while 1:
         draw = ImageDraw.Draw(image)
         draw.rectangle((0, 0, width, height), outline=0, fill=0)
@@ -75,16 +99,14 @@ try:
             val = max(0, val - 5)
         if not GPIO.input(R_pin):
             val = min(100, val + 5)
-        if not GPIO.input(U_pin):
-            tlist.select_previous()
-        if not GPIO.input(D_pin):
-            tlist.select_next()
 
         pbar.set_value(val)
 
         stext.refresh(image, draw)
         pbar.refresh(image, draw)
+        lock.acquire()
         tlist.refresh(image, draw)
+        lock.release()
 
         if ROTATE:
             image = image.rotate(180)

@@ -12,8 +12,16 @@ class Widget(object):
     def set_position(self, position):
         self._position = position
 
+    @property
+    def position(self):
+        return self._position
+
     def set_size(self, size):
         self._size = size
+
+    @property
+    def size(self):
+        return self._size
 
     def set_draw_border(self, draw_border):
         self._draw_border = draw_border
@@ -25,12 +33,18 @@ class Widget(object):
         # type: (Widget, Image, ImageDraw) -> None
         buf = Image.new('1', self._size)
         buf_draw = ImageDraw.Draw(buf)
+        sz = (max(0, self._size[0] - 1), max(0, self._size[1] - 1))
+        
         self._draw(buf, buf_draw)
+
         if self._draw_border:
-            buf_draw.rectangle((0, 0), self._size, outline=255, fill=0)
+            buf_draw.line([(0, 0), (sz[0], 0), sz, (0, sz[1]), (0, 0)], fill=1)
 
         if self._invert:
-            buf = ImageChops.invert(buf)
+            buf2 = Image.new('1', self._size)
+            buf2_draw = ImageDraw.Draw(buf2)
+            buf2_draw.rectangle([(0, 0), sz], outline=255, fill=1)
+            buf = ImageChops.subtract(buf2, buf)
 
         img.paste(buf, self._position)
 
