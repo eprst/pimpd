@@ -14,6 +14,7 @@ from PIL import ImageFont
 from stext import ScrollingText
 from pbar import ProgressBar
 from tlist import TextList
+from kbdmgr import KeyboardManager
 
 # Rotate by 180? That's the way I have my PI positioned, bonnet joystick on the right
 ROTATE = True
@@ -76,6 +77,8 @@ tlist.set_draw_border(True)
 tlist.set_items([])
 
 lock = threading.Condition()
+
+kmgr = KeyboardManager()
 
 def up_down_cb(channel):
     lock.acquire()
