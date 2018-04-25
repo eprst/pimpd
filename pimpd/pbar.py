@@ -12,7 +12,7 @@ class ProgressBar(Widget):
 
     def set_value(self, value):
         # type: (float) -> None
-        assert value >= 0 and value <= self._max_value
+        assert 0 <= value <= self._max_value
         self._value = value
 
     def _draw(self, img, draw):

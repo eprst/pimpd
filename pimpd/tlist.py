@@ -100,7 +100,7 @@ class TextList(Widget):
         elif s + n > k:
             s = k - n
 
-        # make bottom line fully vizible if it is selected
+        # make bottom line fully visible if it is selected
         text_height = self._lines[0].size[1]
         num_lines = len(self._lines)
         if k * (text_height + self._text_margin) > self.size[1]:
@@ -118,10 +118,10 @@ class TextList(Widget):
                     line.set_position((self._text_margin, y))
 
         for i in range(0, n):
-            l = self._lines[i]
-            l.set_text(self._items[s])
-            l.set_scroll(s == self._selected)
-            l.set_invert(s == self._selected)
+            line = self._lines[i]
+            line.set_text(self._items[s])
+            line.set_scroll(s == self._selected)
+            line.set_invert(s == self._selected)
             s = (s + 1) % k
 
     def _draw(self, img, draw):

@@ -84,7 +84,7 @@ def up_down_cb(channel):
     elif channel == D_pin:
         tlist.select_next()
     elif channel == C_pin:
-        print "selected: %s" % str(tlist.selected)
+        print("selected: %s" % str(tlist.selected))
     lock.release()
 
 try:
