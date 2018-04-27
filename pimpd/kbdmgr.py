@@ -113,8 +113,6 @@ class KeyboardManager:
                 for callback in self._callbacks:
                     callback(buttons_pressed)
 
-            # todo: report
-
             prev_buttons_pressed = buttons_pressed
 
             time.sleep(self.POLL_INTERVAL)
