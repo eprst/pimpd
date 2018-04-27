@@ -20,7 +20,7 @@ from kbdmgr import KeyboardManager
 ROTATE = True
 
 # Refresh rate
-REFRESH_RATE = 0.01
+REFRESH_RATE = 0.1
 
 # GPIO setup
 if ROTATE:
@@ -69,56 +69,64 @@ pbar = ProgressBar((0, 30), (40, 10), 100)
 val = 0
 tlist = TextList((45, 5), (80, 55), font, "no playlists")
 tlist.set_draw_border(True)
-#tlist.set_items(["one one one one","two two two two","three three three three", "four", "five"])
+tlist.set_items(["one one one one","two two two two","three three three three", "four", "five"])
 #tlist.set_items(["one one one one","two two two two","three three three three", "four"])
 #tlist.set_items(["one one one one","two two two two","three three three three"])
 #tlist.set_items(["one one one one","two two two two"])
 #tlist.set_items(["one one one one"])
-tlist.set_items([])
+#tlist.set_items([])
 
 lock = threading.Condition()
 
-kmgr = KeyboardManager()
 
-def up_down_cb(channel):
+def buttons_callback(buttons):
+    global val
     lock.acquire()
-    if channel == U_pin:
+    if buttons == [KeyboardManager.UP]:
         tlist.select_previous()
-    elif channel == D_pin:
+    elif buttons == [KeyboardManager.DOWN]:
         tlist.select_next()
-    elif channel == C_pin:
+    elif buttons == [KeyboardManager.LEFT]:
+        val = max(0, val - 5)
+        pbar.set_value(val)
+    elif buttons == [KeyboardManager.RIGHT]:
+        val = min(100, val + 5)
+        pbar.set_value(val)
+    elif buttons == [KeyboardManager.CENTER]:
         print("selected: %s" % str(tlist.selected))
     lock.release()
 
+kmgr = KeyboardManager(ROTATE)
+kmgr.add_callback(callback = buttons_callback)
+
 try:
-    GPIO.add_event_detect(U_pin, GPIO.RISING, callback=up_down_cb, bouncetime=200)
-    GPIO.add_event_detect(D_pin, GPIO.RISING, callback=up_down_cb, bouncetime=200)
-    GPIO.add_event_detect(C_pin, GPIO.RISING, callback=up_down_cb, bouncetime=200)
+    widgets = [stext, pbar, tlist]
+    draw = ImageDraw.Draw(image)
+    draw.rectangle((0, 0, width, height), outline=0, fill=0)
+
     while 1:
-        draw = ImageDraw.Draw(image)
-        draw.rectangle((0, 0, width, height), outline=0, fill=0)
+        have_updates = False
+        for w in widgets:
+            w.tick()
+            if w.need_refresh():
+                lock.acquire()
+                w.refresh(image, draw)
+                lock.release()
+                have_updates = True
 
-        if not GPIO.input(L_pin):
-            val = max(0, val - 5)
-        if not GPIO.input(R_pin):
-            val = min(100, val + 5)
+        if have_updates:
+            if ROTATE:
+                disp.image(image.transpose(Image.ROTATE_180))
+            else:
+                disp.image(image)
+            disp.display()
 
-        pbar.set_value(val)
-
-        stext.refresh(image, draw)
-        pbar.refresh(image, draw)
-        lock.acquire()
-        tlist.refresh(image, draw)
-        lock.release()
-
-        if ROTATE:
-            image = image.rotate(180)
-
-        disp.image(image)
-        disp.display()
         time.sleep(REFRESH_RATE)
 
+        #todo: implement display sleeping/dimming
+
 except KeyboardInterrupt:
+    kmgr.stop()
     disp.clear()
     disp.display()
     GPIO.cleanup()

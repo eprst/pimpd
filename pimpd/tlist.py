@@ -32,6 +32,7 @@ class TextList(Widget):
             ))
 
         self._items = []
+        self._selected_item = None
         self._on_empty_items()
 
     def _middle_line(self):
@@ -69,10 +70,13 @@ class TextList(Widget):
                 self._selected = len(items) - 1
             self._update_lines()
 
+        self._need_refresh = True
+
     def select_next(self):
         if self._selected is not None:
             self._selected = (self._selected + 1) % len(self._items)
             self._update_lines()
+            self._need_refresh = True
 
     def select_previous(self):
         if self._selected is not None:
@@ -80,6 +84,16 @@ class TextList(Widget):
             if self._selected < 0:
                 self._selected = len(self._items) + self._selected
             self._update_lines()
+            self._need_refresh = True
+
+    def tick(self):
+        if self._selected_item is not None:
+            self._selected_item.tick()
+
+    def need_refresh(self):
+        if super(TextList, self).need_refresh():
+            return True
+        return self._selected_item is not None and self._selected_item.need_refresh()
 
     def _update_lines(self):
         self._reset_lines()
@@ -122,6 +136,8 @@ class TextList(Widget):
             line.set_text(self._items[s])
             line.set_scroll(s == self._selected)
             line.set_invert(s == self._selected)
+            if s == self._selected:
+                self._selected_item = line
             s = (s + 1) % k
 
     def _draw(self, img, draw):

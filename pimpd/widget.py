@@ -8,6 +8,7 @@ class Widget(object):
         self._size = size
         self._draw_border = False
         self._invert = False
+        self._need_refresh = True
 
     def set_position(self, position):
         self._position = position
@@ -23,11 +24,17 @@ class Widget(object):
     def size(self):
         return self._size
 
+    def need_refresh(self):
+        return self._need_refresh
+
     def set_draw_border(self, draw_border):
         self._draw_border = draw_border
 
     def set_invert(self, invert):
         self._invert = invert
+
+    def tick(self):
+        pass
 
     def refresh(self, img, draw):
         # type: (Widget, Image, ImageDraw) -> None
@@ -47,6 +54,7 @@ class Widget(object):
             buf = ImageChops.subtract(buf2, buf)
 
         img.paste(buf, self._position)
+        self._need_refresh = False
 
     def _draw(self, img, draw):
         # type: (Widget, Image, ImageDraw) -> None
