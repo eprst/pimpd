@@ -1,4 +1,4 @@
-from screen import Screen
+import screen
 from collections import deque
 import time
 from PIL import Image
@@ -6,7 +6,7 @@ from PIL import ImageDraw
 import Adafruit_SSD1306
 
 class ScreenManager(object):
-    _screen = None  # type: Screen
+    _screen = None  # type: screen.Screen
 
     def __init__(self, rotate, refresh_rate):
         self._screen = None
@@ -17,18 +17,25 @@ class ScreenManager(object):
     def set_screen(self, screen):
         if self._screen is not None:
             self._prev_screens.append(self._screen)
-        self._screen = screen
+        self._set_screen(screen)
 
     def pop_screen(self):
        # go to previous screen
         if len(self._prev_screens) == 0:
-            self._screen = None
-        else
-            self._screen = self._prev_screens.pop()
+            self._set_screen(None)
+        else:
+            self._set_screen(self._prev_screens.pop())
 
     def reset_screen(self, screen):
         self._prev_screens.clear()
+        self._set_screen(screen)
+
+    def _set_screen(self, screen):
+        if self._screen is not None:
+            self._screen.deactivate()
         self._screen = screen
+        if self._screen is not None:
+            self._screen.activate()
 
     def run(self):
         # starts the main loop in the current thread
@@ -43,7 +50,11 @@ class ScreenManager(object):
         image = Image.new('1', (width, height))
 
         screen = self._screen
-        widgets = []
+        if self._screen is None:
+            widgets = []
+        else:
+            widgets = screen.widgets()
+
         draw = ImageDraw.Draw(image)
         draw.rectangle((0, 0, width, height), outline=0, fill=0)
 

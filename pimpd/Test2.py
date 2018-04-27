@@ -15,8 +15,8 @@ from stext import ScrollingText
 from pbar import ProgressBar
 from tlist import TextList
 from kbdmgr import KeyboardManager
-from smgr import ScreenManager
 from testscreen import WidgetsTestScreen
+import smgr
 
 # Rotate by 180? That's the way I have my PI positioned, bonnet joystick on the right
 ROTATE = True
@@ -25,12 +25,12 @@ ROTATE = True
 REFRESH_RATE = 0.1
 
 kmgr = KeyboardManager(ROTATE)
-smgr = ScreenManager(ROTATE, REFRESH_RATE)
+s = smgr.ScreenManager(ROTATE, REFRESH_RATE)
 testscreen = WidgetsTestScreen(smgr, kmgr)
 
-smgr.set_screen(testscreen)
+s.set_screen(testscreen)
 
-smgr.run() # main loop
+s.run() # main loop
 
 kmgr.stop()
 

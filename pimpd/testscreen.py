@@ -17,6 +17,7 @@ class WidgetsTestScreen(Screen):
         self._tlist.set_draw_border(True)
         self._tlist.set_items(["one one one one", "two two two two", "three three three three", "four", "five"])
         self._stext = ScrollingText((0, 0), (40, 20), font, u'Hello::Привет!')
+        self._stext.set_invert(True)
 
     def on_keyboard_event(self, buttons_pressed):
         if buttons_pressed == [KeyboardManager.UP]:
@@ -24,11 +25,11 @@ class WidgetsTestScreen(Screen):
         elif buttons_pressed == [KeyboardManager.DOWN]:
             self._tlist.select_next()
         elif buttons_pressed == [KeyboardManager.LEFT]:
-            val = max(0, self._val - 5)
-            self._pbar.set_value(val)
+            self._val = max(0, self._val - 5)
+            self._pbar.set_value(self._val)
         elif buttons_pressed == [KeyboardManager.RIGHT]:
-            val = min(100, self._val + 5)
-            self._pbar.set_value(val)
+            self._val = min(100, self._val + 5)
+            self._pbar.set_value(self._val)
         elif buttons_pressed == [KeyboardManager.CENTER]:
             print("selected: %s" % str(self._tlist.selected))
 
