@@ -1,0 +1,35 @@
+from PIL import ImageDraw
+from PIL import Image
+from widget import Widget
+
+
+class PlayingWidget(Widget):
+    STOPPED, PAUSED, PLAYING = (1, 2, 3)
+
+    def __init__(self, position, size):
+        super(PlayingWidget, self).__init__(position, size)
+        self._status = PlayingWidget.STOPPED
+
+    def set_status(self, status):
+        if status != self._status:
+            self._need_refresh = True
+            self._status = status
+
+    def _draw(self, img, draw):
+        # type: (PlayingWidget, Image, ImageDraw) -> None
+        if self._status == PlayingWidget.STOPPED:
+            draw.rectangle((0, 0), self._size, outline=1, fill=1)
+        elif self._status == PlayingWidget.PAUSED:
+            draw.rectangle((0, 0), self._size, outline=0, fill=0)
+            h = self.size[1]
+            tw = self._size[0] / 3
+            draw.rectangle((0, 0), (tw, h), outline=1, fill=1)
+            draw.rectangle((tw * 2, 0), (tw, h), outline=1, fill=1)
+        elif self._status == PlayingWidget.PLAYING:
+            draw.rectangle((0, 0), self._size, outline=0, fill=0)
+            draw.polygon([
+                (0, 0),
+                (self._size[0], self._size[1] / 2),
+                (0, self._size[1])
+            ], outline=1, fill=1)
+        pass

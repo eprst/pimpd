@@ -4,6 +4,7 @@ from pbar import ProgressBar
 from tlist import TextList
 from kbdmgr import KeyboardManager
 from screen import Screen
+from playing import PlayingWidget
 from PIL import ImageFont
 
 
@@ -18,6 +19,7 @@ class WidgetsTestScreen(Screen):
         self._tlist.set_items(["one one one one", "two two two two", "three three three three", "four", "five"])
         self._stext = ScrollingText((0, 0), (40, 20), font, u'Hello::Привет!')
         self._stext.set_invert(True)
+        self._status = PlayingWidget((5, 50), (10, 10))
         self._contrast_screen = contrast_screen
 
     def on_keyboard_event(self, buttons_pressed):
@@ -33,12 +35,15 @@ class WidgetsTestScreen(Screen):
             self._pbar.set_value(self._val)
         elif buttons_pressed == [KeyboardManager.CENTER]:
             print("selected: %s" % str(self._tlist.selected))
+            self._status.set_status(PlayingWidget.PLAYING)
         elif buttons_pressed == [KeyboardManager.A]:
             print("Dimming")
             self._screen_manager.dim()
+            self._status.set_status(PlayingWidget.STOPPED)
         elif buttons_pressed == [KeyboardManager.B]:
             print("Undimming")
             self._screen_manager.undim()
+            self._status.set_status(PlayingWidget.PAUSED)
         elif buttons_pressed == [KeyboardManager.A, KeyboardManager.B]:
             self._screen_manager.set_screen(self._contrast_screen)
 
