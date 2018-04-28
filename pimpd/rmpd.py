@@ -63,7 +63,6 @@ class ReconnectingClient(MPDClient, VolumeManager):
             MPDClient.setvol(self, volume)
 
     def _connection_lost(self, reason):
-        print("thread: acquiring threadResume")
         self._threadResumeCond.acquire()
 
         try:
