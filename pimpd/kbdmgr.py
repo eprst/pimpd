@@ -111,7 +111,8 @@ class KeyboardManager:
 
             if len(buttons_pressed) > 0:
                 for callback in self._callbacks:
-                    callback(buttons_pressed)
+                    if callback(buttons_pressed):
+                        break
 
             prev_buttons_pressed = buttons_pressed
 

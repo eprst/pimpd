@@ -16,6 +16,8 @@ from pbar import ProgressBar
 from tlist import TextList
 from kbdmgr import KeyboardManager
 from testscreen import WidgetsTestScreen
+from contrast import ContrastScreen
+from dimmer import Dimmer
 import smgr
 
 # Rotate by 180? That's the way I have my PI positioned, bonnet joystick on the right
@@ -26,7 +28,10 @@ REFRESH_RATE = 0.1
 
 kmgr = KeyboardManager(ROTATE)
 s = smgr.ScreenManager(ROTATE, REFRESH_RATE)
-testscreen = WidgetsTestScreen(smgr, kmgr)
+
+dimmer = Dimmer(s, kmgr, 5, 10)
+contrastscreen = ContrastScreen(s, kmgr, s.display)
+testscreen = WidgetsTestScreen(s, kmgr, contrastscreen)
 
 s.set_screen(testscreen)
 

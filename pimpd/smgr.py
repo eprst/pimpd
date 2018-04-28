@@ -13,6 +13,14 @@ class ScreenManager(object):
         self._prev_screens = deque()
         self._rotate = rotate
         self._refresh_rate = refresh_rate
+        self._screen_off = False
+        self._redraw = False
+        RST = 24
+        self._disp = Adafruit_SSD1306.SSD1306_128_64(rst=RST)
+
+    @property
+    def display(self):
+        return self._disp
 
     def set_screen(self, screen):
         if self._screen is not None:
@@ -37,16 +45,29 @@ class ScreenManager(object):
         if self._screen is not None:
             self._screen.activate()
 
+    def dim(self):
+        # disp.dim is broken, see https://github.com/adafruit/Adafruit_Python_SSD1306/issues/23
+        self._disp.set_contrast(0)
+
+    def undim(self):
+        self._disp.set_contrast(0xCF) # or 0x9F
+
+    def screen_off(self):
+        self._screen_off = True
+        self._redraw = True
+
+    def screen_on(self):
+        self._screen_off = False
+        self._redraw = True
+
     def run(self):
         # starts the main loop in the current thread
-        RST = 24
-        disp = Adafruit_SSD1306.SSD1306_128_64(rst=RST)
-        disp.begin()
-        disp.clear()
-        disp.display()
+        self._disp.begin()
+        self._disp.clear()
+        self._disp.display()
 
-        width = disp.width
-        height = disp.height
+        width = self._disp.width
+        height = self._disp.height
         image = Image.new('1', (width, height))
 
         screen = self._screen
@@ -60,35 +81,37 @@ class ScreenManager(object):
 
         try:
             while True:
-                if screen == self._screen:
-                    global_update = False
-                else:
-                    global_update = True
+                global_update = self._redraw or screen != self._screen
+                self._redraw = False
+                have_updates = global_update
+
+                if self._screen_off:
                     draw.rectangle((0, 0, width, height), outline=0, fill=0)
-                    screen = self._screen
-                    if self._screen is None:
-                        widgets = []
-                    else:
-                        widgets = screen.widgets()
+                else:
+                    if global_update:
+                        draw.rectangle((0, 0, width, height), outline=0, fill=0)
+                        screen = self._screen
+                        if self._screen is None:
+                            widgets = []
+                        else:
+                            widgets = screen.widgets()
 
-                screen.process_keyboard_events()
+                    screen.process_keyboard_events()
 
-                have_updates = False
-
-                for w in widgets:
-                    w.tick()
-                    if global_update or w.need_refresh():
-                        w.refresh(image, draw)
-                        have_updates = True
+                    for w in widgets:
+                        w.tick()
+                        if global_update or w.need_refresh():
+                            w.refresh(image, draw)
+                            have_updates = True
 
                 if have_updates:
                     if self._rotate:
-                        disp.image(image.transpose(Image.ROTATE_180))
+                        self._disp.image(image.transpose(Image.ROTATE_180))
                     else:
-                        disp.image(image)
-                    disp.display()
+                        self._disp.image(image)
+                    self._disp.display()
 
                 time.sleep(self._refresh_rate)
         except KeyboardInterrupt:
-            disp.clear()
-            disp.display()
+            self._disp.clear()
+            self._disp.display()

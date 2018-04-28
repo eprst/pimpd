@@ -27,6 +27,7 @@ class Screen(object):
         self._lock.acquire()
         self._unprocessed_events.append(buttons_pressed)
         self._lock.release()
+        return True
 
     def process_keyboard_events(self):
         # must periodically be called by the main thread to process pending events
