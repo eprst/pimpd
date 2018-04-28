@@ -19,7 +19,8 @@ class WidgetsTestScreen(Screen):
         self._tlist.set_items(["one one one one", "two two two two", "three three three three", "four", "five"])
         self._stext = ScrollingText((0, 0), (40, 20), font, u'Hello::Привет!')
         self._stext.set_invert(True)
-        self._status = PlayingWidget((5, 50), (10, 10))
+        self._status = PlayingWidget((5, 45), (15, 15))
+        # self._status.set_draw_border(True)
         self._contrast_screen = contrast_screen
 
     def on_keyboard_event(self, buttons_pressed):
@@ -48,4 +49,4 @@ class WidgetsTestScreen(Screen):
             self._screen_manager.set_screen(self._contrast_screen)
 
     def widgets(self):
-        return [self._pbar, self._tlist, self._stext]
+        return [self._pbar, self._tlist, self._stext, self._status]
