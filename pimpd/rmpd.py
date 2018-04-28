@@ -1,9 +1,10 @@
 from mpd import MPDClient, ConnectionError
+from volmgr import VolumeManager
 import threading
 import socket
 
 
-class ReconnectingClient(MPDClient):
+class ReconnectingClient(MPDClient, VolumeManager):
     def __init__(self):
         super(ReconnectingClient, self).__init__(use_unicode=True)
         self.connectionStatus = "Initializing"
@@ -48,6 +49,18 @@ class ReconnectingClient(MPDClient):
 
         finally:
             self._threadResumeCond.release()
+
+    @property
+    def volume(self):
+        if self.connected:
+            status = MPDClient.status(self)
+            return int(status['volume'])
+        else:
+            return 0
+
+    def set_volume(self, volume):
+        if self.connected:
+            MPDClient.setvol(self, volume)
 
     def _connection_lost(self, reason):
         print("thread: acquiring threadResume")

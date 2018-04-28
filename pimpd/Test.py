@@ -16,6 +16,7 @@ try:
         try:
             if client.connected:
                 print("Status: %s" % client.status())
+                print("Volume: %d" % client.volume)
             else:
                 print("Connection status: %s" % client.connectionStatus)
                 print("Previous error: %s" % client.lastConnectionFailure)
