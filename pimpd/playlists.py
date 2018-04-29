@@ -37,15 +37,14 @@ class PlayListsScreen(Screen):
             self._current = self._tlist.selected
             if self._current is not None:
                 pl = self._playlists[self._current]
-                print(pl)
-                # todo: load playlist
-                # todo: make a function in rmpd?
-                # self._client.clear()
-                # self._client.load(pl)
-                # self._client.next()
+                self._client.play_playlist(pl)
             self._screen_manager.pop_screen()
+        elif buttons_pressed == [KeyboardManager.UP]:
+            self._tlist.select_previous()
+        elif buttons_pressed == [KeyboardManager.DOWN]:
+            self._tlist.select_next()
 
-    def timer_tick(self):
+    def tick(self):
         super(PlayListsScreen, self).timer_tick()
         if time.time() - self._last_update > PlayListsScreen.TIMEOUT:
             self._screen_manager.pop_screen()

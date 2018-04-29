@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import time
 from select import select
 
@@ -13,7 +14,10 @@ from playlists import PlayListsScreen
 
 
 class MainScreen(Screen):
-    UPDATE_EVERY = 2
+    # refresh on updates from server or every <REFRESH_RATE> seconds
+    REFRESH_RATE = 5
+    # playlist to start on pressing 'A' button
+    A_PLAYLIST = u'Дождь'
 
     def __init__(self, screen_manager, keyboard_manager, client, status_screen, volmgr):
         super(MainScreen, self).__init__(screen_manager, keyboard_manager)
@@ -53,10 +57,12 @@ class MainScreen(Screen):
     def deactivate(self):
         super(MainScreen, self).deactivate()
         self._client.remove_connected_callback(self._connected)
+        # print("deactivate: noidle")
         self._stop_idle()
 
     def _connected(self):
         self._update_status()
+        # print("_connected: idle")
         self._client.send_idle()
 
     def _idle_update_status(self):
@@ -66,6 +72,7 @@ class MainScreen(Screen):
             pass
 
         self._update_status()
+        # print("_idle_update_status: idle")
         self._client.send_idle()  # continue idling
 
     def _update_status(self):
@@ -80,9 +87,8 @@ class MainScreen(Screen):
         elif state == 'pause':
             self._status.set_status(PlayingWidget.PAUSED)
 
-        # todo: detect empty queue/nothing is playing
         if state == 'stop':
-            self._artist.set_text('')
+            self._artist.set_text('<stopped>')
             self._title.set_text('')
         else:
             artist = cs.get('artist', 'Unknown Artist')
@@ -117,28 +123,41 @@ class MainScreen(Screen):
         except mpd.base.CommandError:
             pass
 
-    def timer_tick(self):
+    def _force_update(self):
+        # print("_force_update: noidle")
+        self._stop_idle()
+        self._update_status()
+        # print("_force_update: idle")
+        self._client.send_idle()
+
+    def tick(self):
         if self._client.connected:
-            force_update = time.time() - self._last_update > MainScreen.UPDATE_EVERY
-            if force_update:
-                self._stop_idle()
-                self._update_status()
+            force_update = time.time() - self._last_update > MainScreen.REFRESH_RATE
+            if force_update and not self._screen_manager.is_screen_off():
+                self._force_update()
             elif select([self._client], [], [], 0)[0]:
                 self._idle_update_status()
         else:
             self._screen_manager.set_screen(self._status_screen)
 
     def on_keyboard_event(self, buttons_pressed):
+        # print("on_kbd_event: noidle")
+        self._stop_idle()
+        resume_idle = True
+
         if buttons_pressed == [KeyboardManager.UP] or buttons_pressed == [KeyboardManager.DOWN]:
             self._screen_manager.set_screen(self._play_list_screen)
+            resume_idle = False
         elif buttons_pressed == [KeyboardManager.LEFT]:
             volume = self._volmgr.volume
             volume = max(0, volume - 5)
             self._volmgr.set_volume(volume)
+            self._volume.set_value(volume)
         elif buttons_pressed == [KeyboardManager.RIGHT]:
             volume = self._volmgr.volume
             volume = min(100, volume + 5)
             self._volmgr.set_volume(volume)
+            self._volume.set_value(volume)
         elif buttons_pressed == [KeyboardManager.CENTER]:
             status = self._status.status
             if status == PlayingWidget.PLAYING:
@@ -147,3 +166,11 @@ class MainScreen(Screen):
             elif status == PlayingWidget.PAUSED:
                 self._client.pause(0)
                 self._status.set_status(PlayingWidget.PLAYING)
+        elif buttons_pressed == [KeyboardManager.A]:
+            self._client.play_playlist(MainScreen.A_PLAYLIST)
+        elif buttons_pressed == [KeyboardManager.B]:
+            self._client.next()
+
+        if resume_idle:
+            # print("on_kbd_event: idle")
+            self._client.send_idle()

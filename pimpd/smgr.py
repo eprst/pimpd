@@ -23,6 +23,9 @@ class ScreenManager(object):
     def display(self):
         return self._disp
 
+    def is_screen_off(self):
+        return self._screen_off
+
     def set_screen(self, screen):
         if self._screen is not None:
             self._prev_screens.append(self._screen)
@@ -56,10 +59,14 @@ class ScreenManager(object):
     def screen_off(self):
         self._screen_off = True
         self._redraw = True
+        if self._screen is not None:
+            self._screen.on_screen_off()
 
     def screen_on(self):
         self._screen_off = False
         self._redraw = True
+        if self._screen is not None:
+            self._screen.on_screen_on()
 
     def run(self):
         # starts the main loop in the current thread
@@ -83,7 +90,7 @@ class ScreenManager(object):
         try:
             while True:
                 if screen is not None:
-                    screen.timer_tick()
+                    screen.tick()
 
                 global_update = self._redraw or screen != self._screen
                 self._redraw = False

@@ -120,9 +120,10 @@ class KeyboardManager:
 
         if GPIO is not None:
             GPIO.cleanup()
-        self._stopmon.acquire()
-        self._stopmon.notifyAll()
-        self._stopmon.release()
+        if self._stopmon is not None:
+            self._stopmon.acquire()
+            self._stopmon.notifyAll()
+            self._stopmon.release()
 
     class ButtonState:
         def __init__(self, name):

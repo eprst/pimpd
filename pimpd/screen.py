@@ -41,5 +41,11 @@ class Screen(object):
         # this function will always be called on the main thread
         pass
 
-    def timer_tick(self):
+    def on_screen_off(self):
+        pass
+
+    def on_screen_on(self):
+        pass
+
+    def tick(self):
         pass

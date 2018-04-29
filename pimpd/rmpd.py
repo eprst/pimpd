@@ -1,5 +1,6 @@
 from mpd import MPDClient, ConnectionError
 from volmgr import VolumeManager
+import mpd
 import threading
 import socket
 
@@ -72,6 +73,11 @@ class ReconnectingClient(MPDClient, VolumeManager):
         if self.connected:
             MPDClient.setvol(self, volume)
 
+    def play_playlist(self, name):
+        self.clear()
+        self.load(name)
+        self.next()
+
     def currentsong(self):
         try:
             return MPDClient.currentsong(self)
@@ -128,7 +134,10 @@ class ReconnectingClient(MPDClient, VolumeManager):
                     return attr(*args, **kwargs)
                 except (socket.timeout, ConnectionError) as err:
                     self._connection_lost(str(err))
-                    raise err
+                    raise
+                except mpd.base.PendingCommandError:
+                    print('Pending commands: {}'.format(self._pending))
+                    raise
 
             return wrapper
         else:
