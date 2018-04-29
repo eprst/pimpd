@@ -1,6 +1,6 @@
 from screen import Screen
 from stext import ScrollingText
-from rpmd import ReconnectingClient
+from rmpd import ReconnectingClient
 from PIL import ImageFont
 import threading
 import time

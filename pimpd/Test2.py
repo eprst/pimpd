@@ -14,7 +14,7 @@ REFRESH_RATE = 0.1
 kmgr = KeyboardManager(ROTATE)
 s = smgr.ScreenManager(ROTATE, REFRESH_RATE)
 
-dimmer = Dimmer(s, kmgr, 5, 10)
+# dimmer = Dimmer(s, kmgr, 5, 10)
 contrastscreen = ContrastScreen(s, kmgr, s.display)
 testscreen = WidgetsTestScreen(s, kmgr, contrastscreen)
 main = MainScreen(s, kmgr, None, None)

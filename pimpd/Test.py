@@ -14,6 +14,13 @@ client = rmpd.ReconnectingClient()
 def connected():
     print("Connected!")
     client.send_idle()
+    update()
+
+def update():
+    print("update()")
+    print(client.currentsong())
+    print(client.status())
+    print("/update()")
 
 try:
     client.timeout = 5
@@ -28,8 +35,7 @@ try:
                 if can_read:
                     changes = client.fetch_idle()
                     print(changes) # handle changes
-                    print(client.currentsong())
-                    print(client.status())
+                    update()
                     client.send_idle() # continue idling
 
                 # print("Volume: %d" % client.volume)
