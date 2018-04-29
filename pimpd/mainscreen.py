@@ -8,23 +8,26 @@ from pbar import ProgressBar
 from playing import PlayingWidget
 from screen import Screen
 from stext import ScrollingText
+from kbdmgr import KeyboardManager
 
 
 class MainScreen(Screen):
     UPDATE_EVERY = 2
 
-    def __init__(self, screen_manager, keyboard_manager, client, status_screen):
+    def __init__(self, screen_manager, keyboard_manager, client, status_screen, volmgr):
         super(MainScreen, self).__init__(screen_manager, keyboard_manager)
         self._client = client
         self._status_screen = status_screen
+        self._volmgr = volmgr
+
         font = ImageFont.truetype("DejaVuSans.ttf", 14)
 
         self._status = PlayingWidget((0, 0), (9, 9))
-        self._seekbar = ProgressBar((14, 1), (128 - 14, 7), 100)
+        self._seekbar = ProgressBar((24, 1), (128 - 24, 7), 100)
 
-        self._artist = ScrollingText((0, 12), (128, 15), font, '')
+        self._artist = ScrollingText((0, 12), (128, 16), font, '')
 
-        self._title = ScrollingText((0, 32), (128, 15), font, '')
+        self._title = ScrollingText((0, 32), (128, 16), font, '')
 
         # self._volume_label = ScrollingText((-2, 50), (50, 13), font, ' Volume')
         # self._volume_label.set_draw_border(True)
@@ -33,7 +36,7 @@ class MainScreen(Screen):
         self._volume = ProgressBar((0, 54), (128, 7), 100)
 
         client.add_connected_callback(self._connected)
-        self._last_update = 0
+        self._last_update = time.time()
 
     def widgets(self):
         return [self._status, self._seekbar, self._artist, self._title,
@@ -87,7 +90,7 @@ class MainScreen(Screen):
         else:
             self._seekbar.set_value(0)
 
-        volume = int(st.get('volume', 0))
+        volume = self._volmgr.volume
         self._volume.set_value(volume)
 
         self._last_update = time.time()
@@ -96,8 +99,30 @@ class MainScreen(Screen):
         if self._client.connected:
             force_update = time.time() - self._last_update > MainScreen.UPDATE_EVERY
             if force_update:
+                try:
+                    self._client.noidle()
+                except mpd.base.CommandError:
+                    pass
                 self._update_status()
             elif select([self._client], [], [], 0)[0]:
                 self._idle_update_status()
         else:
             self._screen_manager.set_screen(self._status_screen)
+
+    def on_keyboard_event(self, buttons_pressed):
+        if buttons_pressed == [KeyboardManager.LEFT]:
+            volume = self._volmgr.volume
+            volume = max(0, volume - 5)
+            self._volmgr.set_volume(volume)
+        elif buttons_pressed == [KeyboardManager.RIGHT]:
+            volume = self._volmgr.volume
+            volume = min(100, volume + 5)
+            self._volmgr.set_volume(volume)
+        elif buttons_pressed == [KeyboardManager.CENTER]:
+            status = self._status.status
+            if status == PlayingWidget.PLAYING:
+                self._client.pause(1)
+                self._status.set_status(PlayingWidget.PAUSED)
+            elif status == PlayingWidget.PAUSED:
+                self._client.pause(0)
+                self._status.set_status(PlayingWidget.PLAYING)

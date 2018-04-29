@@ -10,19 +10,21 @@ class ScrollingText(Widget):
         # type: (ScrollingText, (int, int), (int, int), ImageFont, str) -> None
         super(ScrollingText, self).__init__(position, size)
         self._font = font
+        self._text = None
         self.set_text(text)
         self._scroll = True
 
     # noinspection PyAttributeOutsideInit
     def set_text(self, text):
-        self._text = text
-        self._pause = 0
-        self._reversing = False
-        self._offset = 0
-        self._text_size = self._font.getsize(text)
-        self._need_refresh = True
-        if self._size[1] < self._text_size[1]:
-            print("Warning! widget height {} is smaller than font height {} (text: '{}'}".format(self._size[1], self._text_size[1], text))
+        if text != self._text:
+            self._text = text
+            self._pause = 0
+            self._reversing = False
+            self._offset = 0
+            self._text_size = self._font.getsize(text)
+            self._need_refresh = True
+            if self._size[1] < self._text_size[1]:
+                print("Warning! widget height {} is smaller than font height {} (text: '{}')".format(self._size[1], self._text_size[1], text))
 
     def set_scroll(self, scroll):
         self._scroll = scroll

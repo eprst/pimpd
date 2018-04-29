@@ -10,6 +10,10 @@ class PlayingWidget(Widget):
         super(PlayingWidget, self).__init__(position, size)
         self._status = PlayingWidget.STOPPED
 
+    @property
+    def status(self):
+        return self._status
+
     def set_status(self, status):
         if status != self._status:
             self._need_refresh = True

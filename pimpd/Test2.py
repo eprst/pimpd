@@ -24,7 +24,7 @@ s = smgr.ScreenManager(ROTATE, REFRESH_RATE)
 statusscreen = StatusScreen(s, kmgr, client)
 #contrastscreen = ContrastScreen(s, kmgr, s.display)
 #testscreen = WidgetsTestScreen(s, kmgr, contrastscreen)
-main = MainScreen(s, kmgr, client, statusscreen)
+main = MainScreen(s, kmgr, client, statusscreen, client)
 
 s.set_screen(main)
 

@@ -95,7 +95,7 @@ class KeyboardManager:
 
         prev_buttons_pressed = []
 
-        while not self._stop:
+        while not self._stop and GPIO is not None:
             buttons_pressed = []
 
             for pin, button in self._pins_to_buttons.items():
@@ -118,7 +118,8 @@ class KeyboardManager:
 
             time.sleep(self.POLL_INTERVAL)
 
-        GPIO.cleanup()
+        if GPIO is not None:
+            GPIO.cleanup()
         self._stopmon.acquire()
         self._stopmon.notifyAll()
         self._stopmon.release()
