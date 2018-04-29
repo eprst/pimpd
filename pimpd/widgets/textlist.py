@@ -1,6 +1,6 @@
 import math
 
-from stext import ScrollingText
+from scrollingtext import ScrollingText
 from widget import Widget
 
 

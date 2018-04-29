@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
-from stext import ScrollingText
-from pbar import ProgressBar
-from tlist import TextList
+from widgets.scrollingtext import ScrollingText
+from widgets.progressbar import ProgressBar
+from widgets.textlist import TextList
 from kbdmgr import KeyboardManager
 from screen import Screen
-from playing import PlayingWidget
+from widgets.playing import PlayingWidget
 from PIL import ImageFont
 
 

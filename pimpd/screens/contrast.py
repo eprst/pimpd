@@ -1,9 +1,8 @@
-from pbar import ProgressBar
+from widgets.progressbar import ProgressBar
 from screen import Screen
-from stext import ScrollingText
+from widgets.scrollingtext import ScrollingText
 from kbdmgr import KeyboardManager
 from PIL import ImageFont
-import Adafruit_SSD1306
 
 
 class ContrastScreen(Screen):

@@ -4,7 +4,7 @@ import time
 from PIL import ImageFont
 
 from screen import Screen
-from stext import ScrollingText
+from widgets.scrollingtext import ScrollingText
 
 
 class StatusScreen(Screen):

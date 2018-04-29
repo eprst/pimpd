@@ -1,5 +1,5 @@
 from mpd import MPDClient, ConnectionError
-from volmgr import VolumeManager
+from volumemanager import VolumeManager
 import mpd
 import threading
 import socket

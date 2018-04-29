@@ -5,12 +5,12 @@ from select import select
 import mpd
 from PIL import ImageFont
 
-from pbar import ProgressBar
-from playing import PlayingWidget
+from widgets.progressbar import ProgressBar
+from widgets.playing import PlayingWidget
 from screen import Screen
-from stext import ScrollingText
+from widgets.scrollingtext import ScrollingText
 from kbdmgr import KeyboardManager
-from playlists import PlayListsScreen
+from screens.playlists import PlayListsScreen
 
 
 class MainScreen(Screen):

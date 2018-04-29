@@ -1,4 +1,4 @@
-from volmgr import VolumeManager
+from volumemanager import VolumeManager
 import requests
 import json
 

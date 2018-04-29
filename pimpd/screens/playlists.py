@@ -1,7 +1,7 @@
 from PIL import ImageFont
 
 from screen import Screen
-from tlist import TextList
+from widgets.textlist import TextList
 from kbdmgr import KeyboardManager
 import time
 
@@ -45,6 +45,6 @@ class PlayListsScreen(Screen):
             self._tlist.select_next()
 
     def tick(self):
-        super(PlayListsScreen, self).timer_tick()
+        super(PlayListsScreen, self).tick()
         if time.time() - self._last_update > PlayListsScreen.TIMEOUT:
             self._screen_manager.pop_screen()

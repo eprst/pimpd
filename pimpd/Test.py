@@ -4,11 +4,11 @@ from __future__ import print_function
 from select import select
 
 import mpd
-import rmpd
+import reconnectingclient
 import time
 import socket
 
-client = rmpd.ReconnectingClient()
+client = reconnectingclient.ReconnectingClient()
 
 
 def connected():

@@ -1,13 +1,13 @@
 from widget import Widget
 from kbdmgr import KeyboardManager
 from collections import deque
-import smgr
+import screenmanager
 import threading
 
 
 class Screen(object):
     def __init__(self, screen_manager, keyboard_manager):
-        # type: (Screen, smgr.ScreenManager, KeyboardManager) -> None
+        # type: (Screen, screenmanager.ScreenManager, KeyboardManager) -> None
         self._screen_manager = screen_manager
         self._keyboard_manager = keyboard_manager
         self._unprocessed_events = deque()

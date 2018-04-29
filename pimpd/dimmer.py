@@ -1,6 +1,6 @@
 import threading
 import time
-from smgr import ScreenManager
+from screenmanager import ScreenManager
 from kbdmgr import KeyboardManager
 
 
