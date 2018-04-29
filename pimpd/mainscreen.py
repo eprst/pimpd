@@ -9,6 +9,7 @@ from playing import PlayingWidget
 from screen import Screen
 from stext import ScrollingText
 from kbdmgr import KeyboardManager
+from playlists import PlayListsScreen
 
 
 class MainScreen(Screen):
@@ -35,13 +36,24 @@ class MainScreen(Screen):
 
         self._volume = ProgressBar((0, 54), (128, 7), 100)
 
-        client.add_connected_callback(self._connected)
+        self._play_list_screen = PlayListsScreen(screen_manager, keyboard_manager, client)
+
         self._last_update = time.time()
 
     def widgets(self):
         return [self._status, self._seekbar, self._artist, self._title,
                 # self._volume_label, self._volume]
                 self._volume]
+
+    def activate(self):
+        super(MainScreen, self).activate()
+        # this will immediately trigger _connected if already connected
+        self._client.add_connected_callback(self._connected)
+
+    def deactivate(self):
+        super(MainScreen, self).deactivate()
+        self._client.remove_connected_callback(self._connected)
+        self._stop_idle()
 
     def _connected(self):
         self._update_status()
@@ -57,21 +69,8 @@ class MainScreen(Screen):
         self._client.send_idle()  # continue idling
 
     def _update_status(self):
-        cs = self._client.currentsong()
-
-        artist = cs.get('artist', 'Unknown Artist')
-        self._artist.set_text(artist)
-
-        title = cs.get('title', None)
-        file = cs.get('file', None)
-        if title is not None:
-            self._title.set_text(title)
-        elif file is not None:
-            self._title.set_text(file)
-        else:
-            self._title.set_text('Unknown Title')
-
         st = self._client.status()
+        cs = self._client.currentsong()
 
         state = st.get('state', 'stop')  # play/stop/pause
         if state == 'play':
@@ -80,6 +79,23 @@ class MainScreen(Screen):
             self._status.set_status(PlayingWidget.STOPPED)
         elif state == 'pause':
             self._status.set_status(PlayingWidget.PAUSED)
+
+        # todo: detect empty queue/nothing is playing
+        if state == 'stop':
+            self._artist.set_text('')
+            self._title.set_text('')
+        else:
+            artist = cs.get('artist', 'Unknown Artist')
+            self._artist.set_text(artist)
+
+            title = cs.get('title', None)
+            file = cs.get('file', None)
+            if title is not None:
+                self._title.set_text(title)
+            elif file is not None:
+                self._title.set_text(file)
+            else:
+                self._title.set_text('Unknown Title')
 
         elapsed = float(st.get('elapsed', 0.0))
         if elapsed == 0.0:
@@ -95,14 +111,17 @@ class MainScreen(Screen):
 
         self._last_update = time.time()
 
+    def _stop_idle(self):
+        try:
+            self._client.noidle()
+        except mpd.base.CommandError:
+            pass
+
     def timer_tick(self):
         if self._client.connected:
             force_update = time.time() - self._last_update > MainScreen.UPDATE_EVERY
             if force_update:
-                try:
-                    self._client.noidle()
-                except mpd.base.CommandError:
-                    pass
+                self._stop_idle()
                 self._update_status()
             elif select([self._client], [], [], 0)[0]:
                 self._idle_update_status()
@@ -110,7 +129,9 @@ class MainScreen(Screen):
             self._screen_manager.set_screen(self._status_screen)
 
     def on_keyboard_event(self, buttons_pressed):
-        if buttons_pressed == [KeyboardManager.LEFT]:
+        if buttons_pressed == [KeyboardManager.UP] or buttons_pressed == [KeyboardManager.DOWN]:
+            self._screen_manager.set_screen(self._play_list_screen)
+        elif buttons_pressed == [KeyboardManager.LEFT]:
             volume = self._volmgr.volume
             volume = max(0, volume - 5)
             self._volmgr.set_volume(volume)

@@ -56,6 +56,9 @@ class TextList(Widget):
     def selected(self):
         return self._selected
 
+    def set_selected(self, selected):
+        self._selected = max(0, min(selected, len(self._items) - 1))
+
     def set_items(self, items):
         self._items = items
 
@@ -106,8 +109,8 @@ class TextList(Widget):
 
         k = len(self._items)
         n = min(k, len(self._lines))
-        s = self._selected - n/2 + 1
-        #if s < 0:
+        s = self._selected - n / 2 + 1
+        # if s < 0:
         #   s += k
         if s < 0:
             s = 0

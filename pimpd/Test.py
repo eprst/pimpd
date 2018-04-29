@@ -38,6 +38,9 @@ def update():
         print('state: {}, volume: {}'.format(state, volume))
 
     print(st)
+
+    lists = client.listplaylists()
+    print([t['playlist'] for t in lists])
     print("/update()")
 
 
