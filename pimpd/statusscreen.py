@@ -1,9 +1,10 @@
-from screen import Screen
-from stext import ScrollingText
-from rmpd import ReconnectingClient
-from PIL import ImageFont
 import threading
 import time
+
+from PIL import ImageFont
+
+from screen import Screen
+from stext import ScrollingText
 
 
 class StatusScreen(Screen):

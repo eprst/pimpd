@@ -1,9 +1,9 @@
 from __future__ import print_function
 from __future__ import print_function
 
-from mpd import ConnectionError
 from select import select
 
+import mpd
 import rmpd
 import time
 import socket
@@ -13,14 +13,43 @@ client = rmpd.ReconnectingClient()
 
 def connected():
     print("Connected!")
-    client.send_idle()
     update()
+    client.send_idle()
+
 
 def update():
     print("update()")
-    print(client.currentsong())
-    print(client.status())
+    cs = client.currentsong()
+    print('artist: {}'.format(cs.get('artist', '???')))
+    print('title: {}'.format(cs.get('title', None)))
+    print('file: {}'.format(cs.get('file', None)))
+
+    st = client.status()
+    elapsed = float(st.get('elapsed', 0.0))
+    if elapsed == 0.0:
+        elapsed = float(st.get('time', 0.0))
+    state = st.get('state', 'stop')  # play/stop/pause
+    volume = int(st.get('volume', 0))
+    duration = float(st.get('duration', 0.0))
+
+    if duration > 0:
+        print('state: {}, volume: {}, position: {}%'.format(state, volume, elapsed * 100 / duration))
+    else:
+        print('state: {}, volume: {}'.format(state, volume))
+
+    print(st)
     print("/update()")
+
+
+def idle_update():
+    try:
+        client.fetch_idle()
+    except mpd.base.PendingCommandError:
+        pass
+
+    update()
+    client.send_idle()  # continue idling
+
 
 try:
     client.timeout = 5
@@ -33,10 +62,7 @@ try:
             if client.connected:
                 can_read = select([client], [], [], 0)[0]
                 if can_read:
-                    changes = client.fetch_idle()
-                    print(changes) # handle changes
-                    update()
-                    client.send_idle() # continue idling
+                    idle_update()
 
                 # print("Volume: %d" % client.volume)
             else:
@@ -44,7 +70,7 @@ try:
                 print("Previous error: %s" % client.last_connection_failure)
 
             time.sleep(3)
-        except (socket.timeout, ConnectionError) as e:
+        except (socket.timeout, mpd.ConnectionError) as e:
             print(e)
 
 except KeyboardInterrupt:

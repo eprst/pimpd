@@ -30,6 +30,8 @@ class ReconnectingClient(MPDClient, VolumeManager):
 
     def add_connected_callback(self, callback):
         self._connected_callbacks.append(callback)
+        if self.connected:
+            callback()
 
     def remove_connected_callback(self, callback):
         self._connected_callbacks.remove(callback)
@@ -116,6 +118,7 @@ class ReconnectingClient(MPDClient, VolumeManager):
                 except Exception as e:
                     self.last_connection_failure = self.connection_status = str(e)
                     self._keep_reconnecting = False  # fatal exception; stop
+                    raise
 
     def __getattribute__(self, item):
         attr = MPDClient.__getattribute__(self, item)
