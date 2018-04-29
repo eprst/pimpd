@@ -7,27 +7,35 @@ import socket
 class ReconnectingClient(MPDClient, VolumeManager):
     def __init__(self):
         super(ReconnectingClient, self).__init__(use_unicode=True)
-        self.connectionStatus = "Initializing"
-        self.lastConnectionFailure = None
+        self.connection_status = "Initializing"
+        self.last_connection_failure = None
         self.connected = False
 
         self._host = None
         self._port = None
 
-        self._threadResumeCond = threading.Condition()
-        self._threadStartedCond = threading.Condition()
+        self._connected_callbacks = []
 
-        self._keepReconnecting = False
-        self._reconnectThread = threading.Thread(target=self._reconnect)
-        self._reconnectThread.setDaemon(True)
+        self._thread_resume_cond = threading.Condition()
+        self._thread_started_cond = threading.Condition()
 
-        self._threadStartedCond.acquire()
-        self._reconnectThread.start()
-        self._threadStartedCond.wait()
-        self._threadStartedCond.release()
+        self._keep_reconnecting = False
+        self._reconnect_thread = threading.Thread(target=self._reconnect)
+        self._reconnect_thread.setDaemon(True)
+
+        self._thread_started_cond.acquire()
+        self._reconnect_thread.start()
+        self._thread_started_cond.wait()
+        self._thread_started_cond.release()
+
+    def add_connected_callback(self, callback):
+        self._connected_callbacks.append(callback)
+
+    def remove_connected_callback(self, callback):
+        self._connected_callbacks.remove(callback)
 
     def disconnect(self):
-        self._keepReconnecting = False
+        self._keep_reconnecting = False
         if self.connected:
             self.connected = False
             super(ReconnectingClient, self).disconnect()
@@ -36,7 +44,7 @@ class ReconnectingClient(MPDClient, VolumeManager):
         if timeout:
             self.timeout = timeout
 
-        self._threadResumeCond.acquire()
+        self._thread_resume_cond.acquire()
 
         try:
             if self.connected:
@@ -44,11 +52,11 @@ class ReconnectingClient(MPDClient, VolumeManager):
 
             self._host = host
             self._port = port
-            self._keepReconnecting = True
-            self._threadResumeCond.notifyAll()
+            self._keep_reconnecting = True
+            self._thread_resume_cond.notifyAll()
 
         finally:
-            self._threadResumeCond.release()
+            self._thread_resume_cond.release()
 
     @property
     def volume(self):
@@ -62,41 +70,52 @@ class ReconnectingClient(MPDClient, VolumeManager):
         if self.connected:
             MPDClient.setvol(self, volume)
 
+    def currentsong(self):
+        try:
+            return MPDClient.currentsong(self)
+        except UnicodeDecodeError as e:
+            return str(e)
+
     def _connection_lost(self, reason):
-        self._threadResumeCond.acquire()
+        self._thread_resume_cond.acquire()
 
         try:
-            self.lastConnectionFailure = reason
+            self.last_connection_failure = reason
             if self.connected:
                 self.connected = False
                 super(ReconnectingClient, self).disconnect()
-            self._threadResumeCond.notifyAll()
+            self._thread_resume_cond.notifyAll()
         finally:
-            self._threadResumeCond.release()
+            self._thread_resume_cond.release()
+
+    def _connected(self):
+        self.connected = True
+        self.connection_status = "Connected to %s:%s" % (self._host, self._port)
+        for callback in self._connected_callbacks:
+            callback()
 
     def _reconnect(self):
-        self._threadResumeCond.acquire()
+        self._thread_resume_cond.acquire()
 
         # only needed the first time: notify constructor that
         # thread has started and acquired _threadResumeCond
-        self._threadStartedCond.acquire()
-        self._threadStartedCond.notifyAll()
-        self._threadStartedCond.release()
+        self._thread_started_cond.acquire()
+        self._thread_started_cond.notifyAll()
+        self._thread_started_cond.release()
 
         while True:
-            if not self._keepReconnecting or self.connected:
-                self._threadResumeCond.wait()
+            if not self._keep_reconnecting or self.connected:
+                self._thread_resume_cond.wait()
             else:  # Can there be spurious wake-ups in Python? Should we check again?
-                self.connectionStatus = "Connecting to %s:%s" % (self._host, self._port)
+                self.connection_status = "Connecting to %s:%s" % (self._host, self._port)
                 try:
                     super(ReconnectingClient, self).connect(self._host, self._port)
-                    self.connected = True
-                    self.connectionStatus = "Connected to %s:%s" % (self._host, self._port)
+                    self._connected()
                 except (socket.error, socket.timeout) as e:
-                    self.lastConnectionFailure = self.connectionStatus = str(e)
+                    self.last_connection_failure = self.connection_status = str(e)
                 except Exception as e:
-                    self.lastConnectionFailure = self.connectionStatus = str(e)
-                    self._keepReconnecting = False  # fatal exception; stop
+                    self.last_connection_failure = self.connection_status = str(e)
+                    self._keep_reconnecting = False  # fatal exception; stop
 
     def __getattribute__(self, item):
         attr = MPDClient.__getattribute__(self, item)

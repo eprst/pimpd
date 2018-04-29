@@ -40,3 +40,6 @@ class Screen(object):
     def on_keyboard_event(self, buttons_pressed):
         # this function will always be called on the main thread
         pass
+
+    def timer_tick(self):
+        pass

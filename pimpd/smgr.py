@@ -5,6 +5,7 @@ from PIL import Image
 from PIL import ImageDraw
 import Adafruit_SSD1306
 
+
 class ScreenManager(object):
     _screen = None  # type: screen.Screen
 
@@ -28,7 +29,7 @@ class ScreenManager(object):
         self._set_screen(screen)
 
     def pop_screen(self):
-       # go to previous screen
+        # go to previous screen
         if len(self._prev_screens) == 0:
             self._set_screen(None)
         else:
@@ -50,7 +51,7 @@ class ScreenManager(object):
         self._disp.set_contrast(0)
 
     def undim(self):
-        self._disp.set_contrast(0xCF) # or 0x9F
+        self._disp.set_contrast(0xCF)  # or 0x9F
 
     def screen_off(self):
         self._screen_off = True
@@ -71,7 +72,7 @@ class ScreenManager(object):
         image = Image.new('1', (width, height))
 
         screen = self._screen
-        if self._screen is None:
+        if screen is None:
             widgets = []
         else:
             widgets = screen.widgets()
@@ -81,6 +82,9 @@ class ScreenManager(object):
 
         try:
             while True:
+                if screen is not None:
+                    screen.timer_tick()
+
                 global_update = self._redraw or screen != self._screen
                 self._redraw = False
                 have_updates = global_update
