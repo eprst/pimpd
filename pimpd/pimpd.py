@@ -1,10 +1,9 @@
 import screenmanager
 from dimmer import Dimmer
-from kbdmgr import KeyboardManager
+from keyboardmanager import KeyboardManager
 from screens.main import MainScreen
 from screens.status import StatusScreen
 import reconnectingclient
-
 
 # MPD connection settings
 MPD_HOST = '192.168.1.155'
@@ -36,17 +35,18 @@ screen_manager = screenmanager.ScreenManager(ROTATE, REFRESH_RATE)
 
 if DIM_AFTER is not None or OFF_AFTER is not None:
     Dimmer(screen_manager, keyboard_manager, DIM_AFTER, OFF_AFTER,
-            # these buttons must be reported to the current screen even if they were used to wake screen up
-            [KeyboardManager.UP, KeyboardManager.RIGHT, KeyboardManager.DOWN, KeyboardManager.LEFT, KeyboardManager.CENTER])
+           # these buttons must be reported to the current screen even if they were used to wake screen up
+           # currently only <B> is consumed, rest wake up the screen and are passed through
+           [KeyboardManager.UP, KeyboardManager.RIGHT, KeyboardManager.DOWN, KeyboardManager.LEFT,
+            KeyboardManager.CENTER, KeyboardManager.A])
 
 status_screen = StatusScreen(screen_manager, keyboard_manager, mpd_client)
 main = MainScreen(screen_manager, keyboard_manager, mpd_client, status_screen, volume_manager)
 
 screen_manager.set_screen(main)
 
-screen_manager.run() # main loop
+screen_manager.run()  # main loop
 
 keyboard_manager.stop()
 if mpd_client.connected:
     mpd_client.disconnect()
-

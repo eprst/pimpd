@@ -1,5 +1,5 @@
 from widget import Widget
-from kbdmgr import KeyboardManager
+from keyboardmanager import KeyboardManager
 from collections import deque
 import screenmanager
 import threading

@@ -1,7 +1,5 @@
 import threading
 import time
-from screenmanager import ScreenManager
-from kbdmgr import KeyboardManager
 
 
 class Dimmer(object):

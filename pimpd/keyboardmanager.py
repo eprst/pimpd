@@ -4,6 +4,9 @@ import time
 
 
 class KeyboardManager:
+    # 'A' button is always on the left, regardless of rotation
+    # so it's either <joystick> <screen> <A> <B>
+    # or (rotated): <A> <B> <screen> <joystick>
     (UP, DOWN, RIGHT, LEFT, CENTER, A, B) = (1, 2, 3, 4, 5, 6, 7)
 
     # keyboard poll interval in seconds

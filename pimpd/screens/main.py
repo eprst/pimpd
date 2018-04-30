@@ -10,7 +10,7 @@ from widgets.progressbar import ProgressBar
 from widgets.playing import PlayingWidget
 from screen import Screen
 from widgets.scrollingtext import ScrollingText
-from kbdmgr import KeyboardManager
+from keyboardmanager import KeyboardManager
 from screens.playlists import PlayListsScreen
 
 
@@ -19,6 +19,8 @@ class MainScreen(Screen):
     REFRESH_RATE = 5
     # playlist to start on pressing 'A' button
     A_PLAYLIST = u'Дождь'
+    # volume adjustment step
+    VOLUME_STEP = 3
 
     def __init__(self, screen_manager, keyboard_manager, client, status_screen, volmgr):
         super(MainScreen, self).__init__(screen_manager, keyboard_manager)
@@ -158,12 +160,12 @@ class MainScreen(Screen):
                 resume_idle = False
             elif buttons_pressed == [KeyboardManager.LEFT]:
                 volume = self._volmgr.volume
-                volume = max(0, volume - 5)
+                volume = max(0, volume - MainScreen.VOLUME_STEP)
                 self._volmgr.set_volume(volume)
                 self._volume.set_value(volume)
             elif buttons_pressed == [KeyboardManager.RIGHT]:
                 volume = self._volmgr.volume
-                volume = min(100, volume + 5)
+                volume = min(100, volume + MainScreen.VOLUME_STEP)
                 self._volmgr.set_volume(volume)
                 self._volume.set_value(volume)
             elif buttons_pressed == [KeyboardManager.CENTER]:

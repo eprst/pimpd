@@ -1,7 +1,7 @@
 from widgets.progressbar import ProgressBar
 from screen import Screen
 from widgets.scrollingtext import ScrollingText
-from kbdmgr import KeyboardManager
+from keyboardmanager import KeyboardManager
 from PIL import ImageFont
 
 

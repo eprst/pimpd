@@ -2,7 +2,7 @@ from PIL import ImageFont
 
 from screen import Screen
 from widgets.textlist import TextList
-from kbdmgr import KeyboardManager
+from keyboardmanager import KeyboardManager
 import time
 
 
