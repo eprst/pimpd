@@ -1,5 +1,6 @@
 import screen
 from collections import deque
+import signal
 import time
 from PIL import Image
 from PIL import ImageDraw
@@ -16,8 +17,16 @@ class ScreenManager(object):
         self._refresh_rate = refresh_rate
         self._screen_off = False
         self._redraw = False
+        self._kill = False
         RST = 24
         self._disp = Adafruit_SSD1306.SSD1306_128_64(rst=RST)
+
+        signal.signal(signal.SIGINT, self._on_kill)
+        signal.signal(signal.SIGTERM, self._on_kill)
+
+
+    def _on_kill(self, signum, frame):
+        self._kill = True
 
     @property
     def display(self):
@@ -88,7 +97,7 @@ class ScreenManager(object):
         draw.rectangle((0, 0, width, height), outline=0, fill=0)
 
         try:
-            while True:
+            while not self._kill:
                 if screen is not None:
                     screen.tick()
 
@@ -124,5 +133,7 @@ class ScreenManager(object):
 
                 time.sleep(self._refresh_rate)
         except KeyboardInterrupt:
-            self._disp.clear()
-            self._disp.display()
+            pass
+
+        self._disp.clear()
+        self._disp.display()

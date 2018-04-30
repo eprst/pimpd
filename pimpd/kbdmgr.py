@@ -21,14 +21,17 @@ class KeyboardManager:
             self._R_pin = 27
             self._U_pin = 22
             self._D_pin = 17
+            self._A_pin = 6
+            self._B_pin = 5
         else:
             self._L_pin = 27
             self._R_pin = 23
             self._U_pin = 17
             self._D_pin = 22
+            self._A_pin = 5
+            self._B_pin = 6
+
         self._C_pin = 4
-        self._A_pin = 5
-        self._B_pin = 6
 
         self._states = {
             self.UP: self.ButtonState('up'),

@@ -177,7 +177,9 @@ class MainScreen(Screen):
             elif buttons_pressed == [KeyboardManager.A]:
                 self._client.play_playlist(MainScreen.A_PLAYLIST)
             elif buttons_pressed == [KeyboardManager.B]:
-                self._client.next()
+                status = self._status.status
+                if status == PlayingWidget.PLAYING:
+                    self._client.next()
 
             if resume_idle:
                 # print("on_kbd_event: idle")
