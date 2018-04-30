@@ -19,12 +19,14 @@ Keyboard layout:
 - joystick center: toggle pause
 
 # Starting as a service
-This is crude at the moment.
+This is crude at the moment. Assuming repository was cloned to `/home/pi/pimpd`:
 
-Start by creating a log file:
 ```bash
-touch /var/log/pimpd.log
-chown pi /var/log/pimpd.log
+sudo touch /var/log/pimpd.log
+sudo chown pi /var/log/pimpd.log
+sudo cp pimpd.service /etc/systemd/system
+sudo service pimpd start
+sudo systemctl enable pimpd
 ```
 
 # Developing
