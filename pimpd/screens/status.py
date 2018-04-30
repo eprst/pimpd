@@ -24,8 +24,8 @@ class StatusScreen(Screen):
 
     def _poll(self):
         while True:
-            self._status.set_text(self._client.connectionStatus)
-            lf = self._client.lastConnectionFailure
+            self._status.set_text(self._client.connection_status)
+            lf = self._client.last_connection_failure
             if lf is None:
                 self._failure.set_text('')
             else:

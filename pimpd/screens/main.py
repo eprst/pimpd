@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import time
 from select import select
+import socket
 
 import mpd
 from PIL import ImageFont
@@ -104,9 +105,11 @@ class MainScreen(Screen):
                 self._title.set_text('Unknown Title')
 
         elapsed = float(st.get('elapsed', 0.0))
-        if elapsed == 0.0:
-            elapsed = float(st.get('time', 0.0))
         duration = float(st.get('duration', 0.0))
+        if elapsed == 0 or duration == 0:
+            _time = st.get('time', '0:0').split(':')
+            elapsed = float(_time[0])
+            duration = float(_time[1])
         if duration > 0:
             self._seekbar.set_value(elapsed * 100 / duration)
         else:
@@ -131,46 +134,54 @@ class MainScreen(Screen):
         self._client.send_idle()
 
     def tick(self):
-        if self._client.connected:
-            force_update = time.time() - self._last_update > MainScreen.REFRESH_RATE
-            if force_update and not self._screen_manager.is_screen_off():
-                self._force_update()
-            elif select([self._client], [], [], 0)[0]:
-                self._idle_update_status()
-        else:
+        try:
+            if self._client.connected:
+                force_update = time.time() - self._last_update > MainScreen.REFRESH_RATE
+                if force_update and not self._screen_manager.is_screen_off():
+                    self._force_update()
+                elif select([self._client], [], [], 0)[0]:
+                    self._idle_update_status()
+            else:
+                self._screen_manager.set_screen(self._status_screen)
+        except (socket.timeout, mpd.ConnectionError):
             self._screen_manager.set_screen(self._status_screen)
 
     def on_keyboard_event(self, buttons_pressed):
         # print("on_kbd_event: noidle")
         self._stop_idle()
-        resume_idle = True
+        try:
 
-        if buttons_pressed == [KeyboardManager.UP] or buttons_pressed == [KeyboardManager.DOWN]:
-            self._screen_manager.set_screen(self._play_list_screen)
-            resume_idle = False
-        elif buttons_pressed == [KeyboardManager.LEFT]:
-            volume = self._volmgr.volume
-            volume = max(0, volume - 5)
-            self._volmgr.set_volume(volume)
-            self._volume.set_value(volume)
-        elif buttons_pressed == [KeyboardManager.RIGHT]:
-            volume = self._volmgr.volume
-            volume = min(100, volume + 5)
-            self._volmgr.set_volume(volume)
-            self._volume.set_value(volume)
-        elif buttons_pressed == [KeyboardManager.CENTER]:
-            status = self._status.status
-            if status == PlayingWidget.PLAYING:
-                self._client.pause(1)
-                self._status.set_status(PlayingWidget.PAUSED)
-            elif status == PlayingWidget.PAUSED:
-                self._client.pause(0)
-                self._status.set_status(PlayingWidget.PLAYING)
-        elif buttons_pressed == [KeyboardManager.A]:
-            self._client.play_playlist(MainScreen.A_PLAYLIST)
-        elif buttons_pressed == [KeyboardManager.B]:
-            self._client.next()
+            resume_idle = True
 
-        if resume_idle:
-            # print("on_kbd_event: idle")
-            self._client.send_idle()
+            if buttons_pressed == [KeyboardManager.UP] or buttons_pressed == [KeyboardManager.DOWN]:
+                self._screen_manager.set_screen(self._play_list_screen)
+                resume_idle = False
+            elif buttons_pressed == [KeyboardManager.LEFT]:
+                volume = self._volmgr.volume
+                volume = max(0, volume - 5)
+                self._volmgr.set_volume(volume)
+                self._volume.set_value(volume)
+            elif buttons_pressed == [KeyboardManager.RIGHT]:
+                volume = self._volmgr.volume
+                volume = min(100, volume + 5)
+                self._volmgr.set_volume(volume)
+                self._volume.set_value(volume)
+            elif buttons_pressed == [KeyboardManager.CENTER]:
+                status = self._status.status
+                if status == PlayingWidget.PLAYING:
+                    self._client.pause(1)
+                    self._status.set_status(PlayingWidget.PAUSED)
+                elif status == PlayingWidget.PAUSED:
+                    self._client.pause(0)
+                    self._status.set_status(PlayingWidget.PLAYING)
+            elif buttons_pressed == [KeyboardManager.A]:
+                self._client.play_playlist(MainScreen.A_PLAYLIST)
+            elif buttons_pressed == [KeyboardManager.B]:
+                self._client.next()
+
+            if resume_idle:
+                # print("on_kbd_event: idle")
+                self._client.send_idle()
+
+        except (socket.timeout, mpd.ConnectionError):
+            self._screen_manager.set_screen(self._status_screen)

@@ -76,7 +76,7 @@ class ReconnectingClient(MPDClient, VolumeManager):
     def play_playlist(self, name):
         self.clear()
         self.load(name)
-        self.next()
+        self.play(0)
 
     def currentsong(self):
         try:
