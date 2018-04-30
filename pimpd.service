@@ -1,0 +1,10 @@
+[Unit]
+Description=PiMPD
+
+[Service]
+Type=simple
+User=pi
+ExecStart=/home/pi/pimpd/pimpd.sh
+
+[Install]
+WantedBy=network.target
