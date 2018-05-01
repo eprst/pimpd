@@ -4,7 +4,7 @@ from select import select
 import socket
 
 import mpd
-from PIL import ImageFont
+import fonts
 
 from widgets.progressbar import ProgressBar
 from widgets.playing import PlayingWidget
@@ -28,7 +28,7 @@ class MainScreen(Screen):
         self._status_screen = status_screen
         self._volmgr = volmgr
 
-        font = ImageFont.truetype("DejaVuSans.ttf", 14)
+        font = fonts.DEFAULT_FONT_14
 
         self._status = PlayingWidget((0, 0), (9, 9))
         self._seekbar = ProgressBar((24, 1), (128 - 24, 7), 100)

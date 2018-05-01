@@ -1,9 +1,8 @@
-from PIL import ImageFont
-
 from screen import Screen
 from widgets.textlist import TextList
 from keyboardmanager import KeyboardManager
 import time
+import fonts
 
 
 class PlayListsScreen(Screen):
@@ -15,7 +14,7 @@ class PlayListsScreen(Screen):
         self._current = None
         self._playlists = []
 
-        font = ImageFont.truetype("DejaVuSans.ttf", 12)
+        font = fonts.DEFAULT_FONT_12
         self._tlist = TextList((0, 0), (128, 64), font, 'No Play Lists')
         self._tlist.set_draw_border(True)
 

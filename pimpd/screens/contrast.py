@@ -2,7 +2,7 @@ from widgets.progressbar import ProgressBar
 from screen import Screen
 from widgets.scrollingtext import ScrollingText
 from keyboardmanager import KeyboardManager
-from PIL import ImageFont
+import fonts
 
 
 class ContrastScreen(Screen):
@@ -12,7 +12,7 @@ class ContrastScreen(Screen):
         self._contrast = 0xCF # initial value from SSD1306.py
         self._pbar = ProgressBar((0,25), (128,14), 255)
         self._pbar.set_value(0xCF)
-        font = ImageFont.truetype("DejaVuSans.ttf", 12)
+        font = fonts.DEFAULT_FONT_12
         self._label = ScrollingText((25, 5), (100, 15), font, 'Contrast')
 
     def on_keyboard_event(self, buttons_pressed):

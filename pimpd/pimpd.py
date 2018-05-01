@@ -15,13 +15,13 @@ ROTATE = True
 
 # Dim screen after this seconds, or None
 DIM_AFTER = 20
-# Turn screen off after this seconds, or None. Turning screen off greately reduces CPU usage
+# Turn screen off after this seconds, or None. Turning screen off greatly reduces CPU usage
 OFF_AFTER = 30
 
 # Screen refresh rate in seconds
 REFRESH_RATE = 0.1
 
-### End of configuration #####################################################
+# End of configuration #####################################################
 
 mpd_client = reconnectingclient.ReconnectingClient()
 mpd_client.timeout = MPD_TIMEOUT
@@ -36,9 +36,9 @@ screen_manager = screenmanager.ScreenManager(ROTATE, REFRESH_RATE)
 if DIM_AFTER is not None or OFF_AFTER is not None:
     Dimmer(screen_manager, keyboard_manager, DIM_AFTER, OFF_AFTER,
            # these buttons must be reported to the current screen even if they were used to wake screen up
-           # currently only <B> is consumed, rest wake up the screen and are passed through
-           [KeyboardManager.UP, KeyboardManager.RIGHT, KeyboardManager.DOWN, KeyboardManager.LEFT,
-            KeyboardManager.CENTER, KeyboardManager.A])
+           # currently only <UP> is consumed, rest wake up the screen and are passed through
+           [KeyboardManager.RIGHT, KeyboardManager.DOWN, KeyboardManager.LEFT,
+            KeyboardManager.CENTER, KeyboardManager.A, KeyboardManager.B])
 
 status_screen = StatusScreen(screen_manager, keyboard_manager, mpd_client)
 main = MainScreen(screen_manager, keyboard_manager, mpd_client, status_screen, volume_manager)

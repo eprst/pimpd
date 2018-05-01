@@ -1,8 +1,7 @@
 import threading
 import time
 
-from PIL import ImageFont
-
+import fonts
 from screen import Screen
 from widgets.scrollingtext import ScrollingText
 
@@ -11,7 +10,7 @@ class StatusScreen(Screen):
     def __init__(self, screen_manager, keyboard_manager, client):
         super(StatusScreen, self).__init__(screen_manager, keyboard_manager)
         self._client = client
-        font = ImageFont.truetype("DejaVuSans.ttf", 12)
+        font = fonts.DEFAULT_FONT_12
         self._label = ScrollingText((0, 5), (125, 15), font, 'Status')
         self._status = ScrollingText((0, 25), (125, 15), font, '')
         self._failure = ScrollingText((0, 45), (125, 15), font, '')

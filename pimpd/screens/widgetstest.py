@@ -1,17 +1,17 @@
 # -*- coding: utf-8 -*-
-from widgets.scrollingtext import ScrollingText
-from widgets.progressbar import ProgressBar
-from widgets.textlist import TextList
+import fonts
 from keyboardmanager import KeyboardManager
 from screen import Screen
 from widgets.playing import PlayingWidget
-from PIL import ImageFont
+from widgets.progressbar import ProgressBar
+from widgets.scrollingtext import ScrollingText
+from widgets.textlist import TextList
 
 
 class WidgetsTestScreen(Screen):
     def __init__(self, screen_manager, keyboard_manager, contrast_screen):
         super(WidgetsTestScreen, self).__init__(screen_manager, keyboard_manager)
-        font = ImageFont.truetype("DejaVuSans.ttf", 12)
+        font = fonts.DEFAULT_FONT_12
         self._val = 0
         self._pbar = ProgressBar((0, 30), (40, 10), 100)
         self._tlist = TextList((45, 5), (80, 55), font, "no playlists")

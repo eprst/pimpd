@@ -41,7 +41,7 @@ class ReconnectingClient(MPDClient, VolumeManager):
         self._keep_reconnecting = False
         if self.connected:
             self.connected = False
-            super(ReconnectingClient, self).disconnect()
+            MPDClient.disconnect(self)
 
     def connect(self, host, port=None, timeout=None):
         if timeout:
@@ -84,6 +84,31 @@ class ReconnectingClient(MPDClient, VolumeManager):
         except UnicodeDecodeError as e:
             return str(e)
 
+    # override _read_line to be more tolerant to unicode errors
+    def _read_line(self):
+        line = self._rfile.readline()
+        if self.use_unicode:
+            try:
+                # why isn't it an overloadable method?
+                line = mpd.base.decode_str(line)
+            except UnicodeError:
+                pass
+        if not line.endswith("\n"):
+            self.disconnect()
+            raise ConnectionError("Connection lost while reading line")
+        line = line.rstrip("\n")
+        if line.startswith(mpd.base.ERROR_PREFIX):
+            error = line[len(mpd.base.ERROR_PREFIX):].strip()
+            raise mpd.base.CommandError(error)
+        if self._command_list is not None:
+            if line == mpd.base.NEXT:
+                return
+            if line == mpd.base.SUCCESS:
+                raise mpd.base.ProtocolError("Got unexpected '{}'".format(mpd.base.SUCCESS))
+        elif line == mpd.base.SUCCESS:
+            return
+        return line
+
     def _connection_lost(self, reason):
         self._thread_resume_cond.acquire()
 
@@ -91,7 +116,7 @@ class ReconnectingClient(MPDClient, VolumeManager):
             self.last_connection_failure = reason
             if self.connected:
                 self.connected = False
-                super(ReconnectingClient, self).disconnect()
+                MPDClient.disconnect(self)
             self._thread_resume_cond.notifyAll()
         finally:
             self._thread_resume_cond.release()
@@ -117,7 +142,7 @@ class ReconnectingClient(MPDClient, VolumeManager):
             else:  # Can there be spurious wake-ups in Python? Should we check again?
                 self.connection_status = "Connecting to %s:%s" % (self._host, self._port)
                 try:
-                    super(ReconnectingClient, self).connect(self._host, self._port)
+                    MPDClient.connect(self, self._host, self._port)
                     self._connected()
                 except (socket.error, socket.timeout) as e:
                     self.last_connection_failure = self.connection_status = str(e)
