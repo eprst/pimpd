@@ -32,7 +32,7 @@ class PlayListsScreen(Screen):
 
     def on_keyboard_event(self, buttons_pressed):
         self._last_update = time.time()
-        if buttons_pressed == [KeyboardManager.CENTER]:
+        if buttons_pressed == [KeyboardManager.CENTER] or buttons_pressed == [KeyboardManager.RIGHT]:
             self._current = self._tlist.selected
             if self._current is not None:
                 pl = self._playlists[self._current]
@@ -42,6 +42,8 @@ class PlayListsScreen(Screen):
             self._tlist.select_previous()
         elif buttons_pressed == [KeyboardManager.DOWN]:
             self._tlist.select_next()
+        elif buttons_pressed == [KeyboardManager.LEFT]:
+            self._screen_manager.pop_screen()
 
     def tick(self):
         super(PlayListsScreen, self).tick()
