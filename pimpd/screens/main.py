@@ -90,8 +90,14 @@ class MainScreen(Screen):
             self._artist.set_text('<stopped>')
             self._title.set_text('')
         else:
-            artist = cs.get('artist', 'Unknown Artist')
-            self._artist.set_text(artist)
+            artist = cs.get('artist')
+            name = cs.get('name')
+            if artist is not None:
+                self._artist.set_text(artist)
+            elif name is not None:
+                self._artist.set_text(name)
+            else:
+                self._artist.set_text('Unknown Artist')
 
             title = cs.get('title', None)
             file = cs.get('file', None)
