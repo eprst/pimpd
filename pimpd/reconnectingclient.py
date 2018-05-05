@@ -77,7 +77,7 @@ class ReconnectingClient(MPDClient, VolumeManager):
         if self.connected:
             try:
                 self.noidle()
-            except CommandError:
+            except mpd.base.CommandError:
                 pass
 
     def play_playlist(self, name):
