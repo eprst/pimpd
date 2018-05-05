@@ -73,7 +73,15 @@ class ReconnectingClient(MPDClient, VolumeManager):
         if self.connected:
             MPDClient.setvol(self, volume)
 
+    def safe_noidle(self):
+        if self.connected:
+            try:
+                self.noidle()
+            except CommandError:
+                pass
+
     def play_playlist(self, name):
+        self.safe_noidle()
         self.clear()
         self.load(name)
         self.play(0)

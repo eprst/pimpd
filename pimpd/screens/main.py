@@ -37,10 +37,6 @@ class MainScreen(Screen):
 
         self._title = ScrollingText((0, 32), (128, 16), font, '')
 
-        # self._volume_label = ScrollingText((-2, 50), (50, 13), font, ' Volume')
-        # self._volume_label.set_draw_border(True)
-        # self._volume = ProgressBar((55, 54), (128 - 55, 7), 100)
-
         self._volume = ProgressBar((0, 54), (128, 7), 100)
 
         self._play_list_screen = PlayListsScreen(screen_manager, keyboard_manager, client)
@@ -123,10 +119,7 @@ class MainScreen(Screen):
         self._last_update = time.time()
 
     def _stop_idle(self):
-        try:
-            self._client.noidle()
-        except mpd.base.CommandError:
-            pass
+        self._client.safe_noidle()
 
     def _force_update(self):
         # print("_force_update: noidle")
