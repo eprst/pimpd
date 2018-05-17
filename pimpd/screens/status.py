@@ -22,7 +22,7 @@ class StatusScreen(Screen):
         thread.start()
 
     def _poll(self):
-        while True:
+        while self._active:
             self._status.set_text(self._client.connection_status)
             lf = self._client.last_connection_failure
             if lf is None:

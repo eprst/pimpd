@@ -12,6 +12,7 @@ class Screen(object):
         self._keyboard_manager = keyboard_manager
         self._unprocessed_events = deque()
         self._lock = threading.Condition()
+        self._active = False
 
     def widgets(self):
         # type: () -> [Widget]
@@ -19,9 +20,11 @@ class Screen(object):
 
     def activate(self):
         self._keyboard_manager.add_callback(self._keyboard_handler)
+        self._active = True
 
     def deactivate(self):
         self._keyboard_manager.remove_callback(self._keyboard_handler)
+        self._active = False
 
     def _keyboard_handler(self, buttons_pressed):
         self._lock.acquire()

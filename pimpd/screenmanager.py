@@ -132,8 +132,9 @@ class ScreenManager(object):
                     self._disp.display()
 
                 time.sleep(self._refresh_rate)
-        except KeyboardInterrupt:
-            pass
+        except Exception as e:
+            print e.__doc__
+            print e.message
 
         self._disp.clear()
         self._disp.display()
