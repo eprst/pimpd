@@ -1,5 +1,6 @@
 import logging
 import logging.handlers
+import signal
 import screenmanager
 from dimmer import Dimmer
 from keyboardmanager import KeyboardManager
@@ -23,15 +24,15 @@ OFF_AFTER = 30
 # Screen refresh rate in seconds
 REFRESH_RATE = 0.1
 
-# Logging config
+# End of configuration #####################################################
+
+# Logging 
 syslog_handler=logging.handlers.SysLogHandler(address='/dev/log', facility=logging.handlers.SysLogHandler.LOG_DAEMON)
 formatter = logging.Formatter('pimpd: %(levelname)s %(message)s')
 syslog_handler.setFormatter(formatter)
 logging.basicConfig(level=logging.INFO, handlers=[syslog_handler])
 logging.getLogger().setLevel(logging.INFO)
 logging.getLogger().addHandler(syslog_handler)
-
-# End of configuration #####################################################
 
 mpd_client = reconnectingclient.ReconnectingClient()
 mpd_client.timeout = MPD_TIMEOUT
@@ -42,6 +43,12 @@ volume_manager = mpd_client
 
 keyboard_manager = KeyboardManager(ROTATE)
 screen_manager = screenmanager.ScreenManager(ROTATE, REFRESH_RATE)
+
+def on_kill(signum, frame):
+    screen_manager.shutdown()
+
+signal.signal(signal.SIGTERM, on_kill)
+signal.signal(signal.SIGINT, on_kill)
 
 if DIM_AFTER is not None or OFF_AFTER is not None:
     Dimmer(screen_manager, keyboard_manager, DIM_AFTER, OFF_AFTER,

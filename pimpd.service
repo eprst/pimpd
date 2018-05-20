@@ -4,7 +4,11 @@ Description=PiMPD
 [Service]
 Type=simple
 User=pi
-ExecStart=/home/pi/pimpd/pimpd.sh
+WorkingDirectory=/home/pi/pimpd
+# ExecStart=/home/pi/pimpd/pimpd.sh
+ExecStart=/usr/bin/python /home/pi/pimpd/pimpd.sh
+Restart=on-failure
+PIDFile=/var/run/pimpd.pid
 
 [Install]
 WantedBy=network.target

@@ -1,6 +1,5 @@
 import screen
 from collections import deque
-import signal
 import time
 import traceback
 import logging
@@ -23,11 +22,7 @@ class ScreenManager(object):
         RST = 24
         self._disp = Adafruit_SSD1306.SSD1306_128_64(rst=RST)
 
-        signal.signal(signal.SIGINT, self._on_kill)
-        signal.signal(signal.SIGTERM, self._on_kill)
-
-
-    def _on_kill(self, signum, frame):
+    def shutdown(self):
         self._kill = True
 
     @property
