@@ -11,9 +11,9 @@ class StatusScreen(Screen):
         super(StatusScreen, self).__init__(screen_manager, keyboard_manager)
         self._client = client
         font = fonts.DEFAULT_FONT_12
-        self._label = ScrollingText((0, 5), (125, 15), font, 'Status')
-        self._status = ScrollingText((0, 25), (125, 15), font, '')
-        self._failure = ScrollingText((0, 45), (125, 15), font, '')
+        self._label = ScrollingText((0, 5), (125, 15), font, u'Status')
+        self._status = ScrollingText((0, 25), (125, 15), font, u'')
+        self._failure = ScrollingText((0, 45), (125, 15), font, u'')
 
     def activate(self):
         Screen.activate(self)
@@ -26,7 +26,7 @@ class StatusScreen(Screen):
             self._status.set_text(self._client.connection_status)
             lf = self._client.last_connection_failure
             if lf is None:
-                self._failure.set_text('')
+                self._failure.set_text(u'')
             else:
                 self._failure.set_text(lf)
 

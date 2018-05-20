@@ -33,9 +33,9 @@ class MainScreen(Screen):
         self._status = PlayingWidget((0, 0), (9, 9))
         self._seekbar = ProgressBar((24, 1), (128 - 24, 7), 100)
 
-        self._artist = ScrollingText((0, 12), (128, 16), font, '')
+        self._artist = ScrollingText((0, 12), (128, 16), font, u'')
 
-        self._title = ScrollingText((0, 32), (128, 16), font, '')
+        self._title = ScrollingText((0, 32), (128, 16), font, u'')
 
         self._volume = ProgressBar((0, 54), (128, 7), 100)
 
@@ -87,8 +87,8 @@ class MainScreen(Screen):
             self._status.set_status(PlayingWidget.PAUSED)
 
         if state == 'stop':
-            self._artist.set_text('<stopped>')
-            self._title.set_text('')
+            self._artist.set_text(u'<stopped>')
+            self._title.set_text(u'')
         else:
             artist = cs.get('artist')
             name = cs.get('name')
@@ -97,7 +97,7 @@ class MainScreen(Screen):
             elif name is not None:
                 self._artist.set_text(name)
             else:
-                self._artist.set_text('Unknown Artist')
+                self._artist.set_text(u'Unknown Artist')
 
             title = cs.get('title', None)
             file = cs.get('file', None)
@@ -106,7 +106,7 @@ class MainScreen(Screen):
             elif file is not None:
                 self._title.set_text(file)
             else:
-                self._title.set_text('Unknown Title')
+                self._title.set_text(u'Unknown Title')
 
         elapsed = float(st.get('elapsed', 0.0))
         duration = float(st.get('duration', 0.0))

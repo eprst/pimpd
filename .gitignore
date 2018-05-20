@@ -106,3 +106,6 @@ ENV/
 
 # vim
 **/*.swp
+
+# fonts
+pimpd/Arial.ttf

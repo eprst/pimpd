@@ -8,7 +8,7 @@ import socket
 class ReconnectingClient(MPDClient, VolumeManager):
     def __init__(self):
         super(ReconnectingClient, self).__init__(use_unicode=True)
-        self.connection_status = "Initializing"
+        self.connection_status = u"Initializing"
         self.last_connection_failure = None
         self.connected = False
 
@@ -98,9 +98,9 @@ class ReconnectingClient(MPDClient, VolumeManager):
         if self.use_unicode:
             try:
                 # why isn't it an overloadable method?
-                line = mpd.base.decode_str(line)
+                line = unicode(line, "utf-8")
             except UnicodeError:
-                pass
+                line = unicode(line)
         if not line.endswith("\n"):
             self.disconnect()
             raise ConnectionError("Connection lost while reading line")
@@ -131,7 +131,7 @@ class ReconnectingClient(MPDClient, VolumeManager):
 
     def _connected(self):
         self.connected = True
-        self.connection_status = "Connected to %s:%s" % (self._host, self._port)
+        self.connection_status = u"Connected to %s:%s" % (self._host, self._port)
         for callback in self._connected_callbacks:
             callback()
 
@@ -148,14 +148,14 @@ class ReconnectingClient(MPDClient, VolumeManager):
             if not self._keep_reconnecting or self.connected:
                 self._thread_resume_cond.wait()
             else:  # Can there be spurious wake-ups in Python? Should we check again?
-                self.connection_status = "Connecting to %s:%s" % (self._host, self._port)
+                self.connection_status = u"Connecting to %s:%s" % (self._host, self._port)
                 try:
                     MPDClient.connect(self, self._host, self._port)
                     self._connected()
                 except (socket.error, socket.timeout) as e:
-                    self.last_connection_failure = self.connection_status = str(e)
+                    self.last_connection_failure = self.connection_status = unicode(e)
                 except Exception as e:
-                    self.last_connection_failure = self.connection_status = str(e)
+                    self.last_connection_failure = self.connection_status = unicode(e)
                     self._keep_reconnecting = False  # fatal exception; stop
                     raise
 

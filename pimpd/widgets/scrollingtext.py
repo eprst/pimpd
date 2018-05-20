@@ -16,6 +16,9 @@ class ScrollingText(Widget):
 
     # noinspection PyAttributeOutsideInit
     def set_text(self, text):
+        # temp debugging
+        # if isinstance(text, unicode) != isinstance(self._text,unicode):
+        #    print("my text: '{}'(unicode: {}), new text: '{}'(unicode: {})".format(self._text, isinstance(self._text,unicode),text,isinstance(text,unicode)))
         if text != self._text:
             self._text = text
             self._pause = 0
