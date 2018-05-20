@@ -1,3 +1,5 @@
+import logging
+import logging.handlers
 import screenmanager
 from dimmer import Dimmer
 from keyboardmanager import KeyboardManager
@@ -20,6 +22,14 @@ OFF_AFTER = 30
 
 # Screen refresh rate in seconds
 REFRESH_RATE = 0.1
+
+# Logging config
+syslog_handler=logging.handlers.SysLogHandler(address='/dev/log', facility=logging.handlers.SysLogHandler.LOG_DAEMON)
+formatter = logging.Formatter('pimpd: %(levelname)s %(message)s')
+syslog_handler.setFormatter(formatter)
+logging.basicConfig(level=logging.INFO, handlers=[syslog_handler])
+logging.getLogger().setLevel(logging.INFO)
+logging.getLogger().addHandler(syslog_handler)
 
 # End of configuration #####################################################
 

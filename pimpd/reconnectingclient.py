@@ -3,6 +3,7 @@ from volumemanager import VolumeManager
 import mpd
 import threading
 import socket
+import logging
 
 
 class ReconnectingClient(MPDClient, VolumeManager):
@@ -169,7 +170,7 @@ class ReconnectingClient(MPDClient, VolumeManager):
                     self._connection_lost(str(err))
                     raise
                 except mpd.base.PendingCommandError:
-                    print('Pending commands: {}'.format(self._pending))
+                    logging.info('Pending commands: {}'.format(self._pending))
                     raise
 
             return wrapper

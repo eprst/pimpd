@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import fonts
+import logging
 from keyboardmanager import KeyboardManager
 from screen import Screen
 from widgets.playing import PlayingWidget
@@ -35,14 +36,14 @@ class WidgetsTestScreen(Screen):
             self._val = min(100, self._val + 5)
             self._pbar.set_value(self._val)
         elif buttons_pressed == [KeyboardManager.CENTER]:
-            print("selected: %s" % str(self._tlist.selected))
+            logging.debug("selected: %s" % str(self._tlist.selected))
             self._status.set_status(PlayingWidget.PLAYING)
         elif buttons_pressed == [KeyboardManager.A]:
-            print("Dimming")
+            logging.debug("Dimming")
             self._screen_manager.dim()
             self._status.set_status(PlayingWidget.STOPPED)
         elif buttons_pressed == [KeyboardManager.B]:
-            print("Undimming")
+            logging.debug("Undimming")
             self._screen_manager.undim()
             self._status.set_status(PlayingWidget.PAUSED)
         elif buttons_pressed == [KeyboardManager.A, KeyboardManager.B]:

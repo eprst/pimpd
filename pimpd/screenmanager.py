@@ -3,6 +3,7 @@ from collections import deque
 import signal
 import time
 import traceback
+import logging
 from PIL import Image
 from PIL import ImageDraw
 import Adafruit_SSD1306
@@ -134,9 +135,8 @@ class ScreenManager(object):
 
                 time.sleep(self._refresh_rate)
         except Exception as e:
-            print e.__doc__
-            print e.message
-            traceback.print_exc()
+            logging.error(e.message)
+            logging.error(traceback.format_exc())
 
         self._disp.clear()
         self._disp.display()
