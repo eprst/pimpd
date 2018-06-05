@@ -112,8 +112,7 @@ class ScreenManager(object):
                             widgets = []
                         else:
                             widgets = screen.widgets()
-
-                    screen.process_keyboard_events()
+                            screen.process_keyboard_events()
 
                     for w in widgets:
                         w.tick()
