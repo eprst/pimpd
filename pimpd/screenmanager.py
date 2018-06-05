@@ -93,8 +93,8 @@ class ScreenManager(object):
         draw = ImageDraw.Draw(image)
         draw.rectangle((0, 0, width, height), outline=0, fill=0)
 
-        try:
-            while not self._kill:
+        while not self._kill:
+            try:
                 if screen is not None:
                     screen.tick()
 
@@ -129,9 +129,9 @@ class ScreenManager(object):
                     self._disp.display()
 
                 time.sleep(self._refresh_rate)
-        except Exception as e:
-            logging.error(e.message)
-            logging.error(traceback.format_exc())
+            except Exception as e:
+                logging.error(e.message)
+                logging.error(traceback.format_exc())
 
         self._disp.clear()
         self._disp.display()

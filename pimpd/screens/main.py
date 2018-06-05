@@ -89,6 +89,10 @@ class MainScreen(Screen):
         if state == 'stop':
             self._artist.set_text(u'<stopped>')
             self._title.set_text(u'')
+        elif isinstance(cs, basestring):
+            # got this once, not sure what it means
+            self._artist.set_text(cs)
+            self._title.set_text(cs)
         else:
             artist = cs.get('artist')
             name = cs.get('name')

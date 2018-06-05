@@ -126,8 +126,11 @@ class ReconnectingClient(MPDClient, VolumeManager):
             if self.connected:
                 self.connected = False
                 MPDClient.disconnect(self)
-            self._thread_resume_cond.notifyAll()
+        except Exception as e: # shit happens inside mpd library sometimes
+            logging.error(e.message)
+            logging.error(traceback.format_exc())
         finally:
+            self._thread_resume_cond.notifyAll()
             self._thread_resume_cond.release()
 
     def _connected(self):
