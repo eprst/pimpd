@@ -12,7 +12,7 @@ at the top of `pimpd/screens/main.py`
 
 # Using
 Keyboard layout:
-- A: load and play hard-coded playlist. Playlist name is set using `A_PLAYLIST` variable in `screens/main.py`.
+- A: load and play hard-coded playlist. Playlist name is set using `A_PLAYLIST` variable in `pimpd/screens/main.py`
 - B: play next track
 - joystick left/right: change volume
 - joystick up/down: select playlist, center to replace current queue and start playing
