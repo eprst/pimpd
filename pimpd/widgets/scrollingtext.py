@@ -27,7 +27,7 @@ class ScrollingText(Widget):
             self._text_size = self._font.getsize(text)
             self._need_refresh = True
             if self._size[1] < self._text_size[1]:
-                logging.warning("Warning! widget height {} is smaller than font height {} (text: '{}')".format(self._size[1], self._text_size[1], text))
+                logging.warning(u"Warning! widget height {} is smaller than font height {} (text: '{}')".format(self._size[1], self._text_size[1], text))
 
     def set_scroll(self, scroll):
         self._scroll = scroll
