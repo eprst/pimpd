@@ -36,4 +36,3 @@ class PlayingWidget(Widget):
                 (w, h/2),
                 (0, h-1)
             ], outline=1, fill=1)
-        pass

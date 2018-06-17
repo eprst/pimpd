@@ -24,7 +24,7 @@ class ContrastScreen(Screen):
         elif buttons_pressed == [KeyboardManager.CENTER]:
             self._screen_manager.pop_screen()
 
-        logging.debug("setting contrast to ", self._contrast)
+        logging.debug("setting contrast to %d", self._contrast)
         self._disp.set_contrast(self._contrast)
         self._pbar.set_value(self._contrast)
 

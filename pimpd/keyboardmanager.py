@@ -82,9 +82,9 @@ class KeyboardManager:
         if is_pressed:
             state.pressed()
             return state.pressed_for == self.FIRST_PRESS_CNT or (
-                        state.pressed_for > self.REPEAT_CNT and
-                        state.pressed_for % self.REPEAT_EVERY == 0
-                    )
+                state.pressed_for > self.REPEAT_CNT and
+                state.pressed_for % self.REPEAT_EVERY == 0
+            )
         else:
             state.released()
             return False
