@@ -4,6 +4,7 @@ import mpd
 import threading
 import socket
 import logging
+import traceback
 
 
 class ReconnectingClient(MPDClient, VolumeManager):
