@@ -5,9 +5,12 @@ import threading
 import socket
 import logging
 import traceback
+import time
 
 
 class ReconnectingClient(MPDClient, VolumeManager):
+    reconnect_sleep_time = 1 # seconds
+
     def __init__(self):
         super(ReconnectingClient, self).__init__(use_unicode=True)
         self.connection_status = u"Initializing"
@@ -102,7 +105,10 @@ class ReconnectingClient(MPDClient, VolumeManager):
                 # why isn't it an overloadable method?
                 line = unicode(line, "utf-8")
             except UnicodeError:
-                line = unicode(line)
+                try:
+                    line = unicode(line)
+                except UnicodeError:
+                    pass # already unicode? give up..
         if not line.endswith("\n"):
             self.disconnect()
             raise ConnectionError("Connection lost while reading line")
@@ -159,6 +165,7 @@ class ReconnectingClient(MPDClient, VolumeManager):
                     self._connected()
                 except (socket.error, socket.timeout) as e:
                     self.last_connection_failure = self.connection_status = unicode(e)
+                    time.sleep(ReconnectingClient.reconnect_sleep_time)
                 except Exception as e:
                     self.last_connection_failure = self.connection_status = unicode(e)
                     self._keep_reconnecting = False  # fatal exception; stop

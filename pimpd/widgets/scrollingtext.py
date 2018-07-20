@@ -20,14 +20,17 @@ class ScrollingText(Widget):
         # if isinstance(text, unicode) != isinstance(self._text,unicode):
         #    print("my text: '{}'(unicode: {}), new text: '{}'(unicode: {})".format(self._text, isinstance(self._text,unicode),text,isinstance(text,unicode)))
         if text != self._text:
-            self._text = text
-            self._pause = 0
-            self._reversing = False
-            self._offset = 0
-            self._text_size = self._font.getsize(text)
-            self._need_refresh = True
-            if self._size[1] < self._text_size[1]:
-                logging.warning(u"Warning! widget height {} is smaller than font height {} (text: '{}')".format(self._size[1], self._text_size[1], text))
+            try:
+                self._text = text
+                self._pause = 0
+                self._reversing = False
+                self._offset = 0
+                self._text_size = self._font.getsize(text)
+                self._need_refresh = True
+                if self._size[1] < self._text_size[1]:
+                    logging.warning(u"Warning! widget height {} is smaller than font height {} (text: '{}')".format(self._size[1], self._text_size[1], text))
+            except IOError:
+                self.set_text(u"err") # getting 'IOError: invalid composite glyph' periodically
 
     def set_scroll(self, scroll):
         self._scroll = scroll
