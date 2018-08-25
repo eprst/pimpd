@@ -19,6 +19,9 @@ class MainScreen(Screen):
     REFRESH_RATE = 5
     # playlist to start on pressing 'A' button
     A_PLAYLIST = u'Дождь'
+    # playlist to start on pressing 'A' and 'B' buttons together
+    # (doesn't work, have to debug)
+    AB_PLAYLIST = u'шум со звуком в конце'
     # volume adjustment step
     VOLUME_STEP = 3
 
@@ -181,6 +184,8 @@ class MainScreen(Screen):
                     self._status.set_status(PlayingWidget.PLAYING)
             elif buttons_pressed == [KeyboardManager.A]:
                 self._client.play_playlist(MainScreen.A_PLAYLIST)
+            elif buttons_pressed == [KeyboardManager.A, KeyboardManager.B]:
+                self._client.play_playlist(MainScreen.AB_PLAYLIST)
             elif buttons_pressed == [KeyboardManager.B]:
                 status = self._status.status
                 if status == PlayingWidget.PLAYING:

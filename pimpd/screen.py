@@ -3,6 +3,7 @@ from keyboardmanager import KeyboardManager
 from collections import deque
 import screenmanager
 import threading
+import time
 
 
 class Screen(object):
@@ -13,6 +14,7 @@ class Screen(object):
         self._unprocessed_events = deque()
         self._lock = threading.Condition()
         self._active = False
+        self._last_update = time.time()
 
     def widgets(self):
         # type: () -> [Widget]

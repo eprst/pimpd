@@ -13,7 +13,7 @@ class ReconnectingClient(MPDClient, VolumeManager):
 
     def __init__(self):
         super(ReconnectingClient, self).__init__(use_unicode=True)
-        self.connection_status = u"Initializing"
+        self._set_status(u"Initializing")
         self.last_connection_failure = None
         self.connected = False
 
@@ -81,7 +81,7 @@ class ReconnectingClient(MPDClient, VolumeManager):
     def safe_noidle(self):
         if self.connected:
             try:
-                self.noidle()
+                MPDClient.noidle(self)
             except mpd.base.CommandError:
                 pass
 
@@ -125,7 +125,12 @@ class ReconnectingClient(MPDClient, VolumeManager):
             return
         return line
 
+    def _set_status(self, status):
+        self.connection_status = status
+        logging.info(status)
+
     def _connection_lost(self, reason):
+        logging.warn("Connection lost: %s" % reason)
         self._thread_resume_cond.acquire()
 
         try:
@@ -141,10 +146,10 @@ class ReconnectingClient(MPDClient, VolumeManager):
             self._thread_resume_cond.release()
 
     def _connected(self):
-        self.connected = True
-        self.connection_status = u"Connected to %s:%s" % (self._host, self._port)
+        self._set_status(u"Connected to %s:%s" % (self._host, self._port))
         for callback in self._connected_callbacks:
             callback()
+        self.connected = True
 
     def _reconnect(self):
         self._thread_resume_cond.acquire()
@@ -159,15 +164,19 @@ class ReconnectingClient(MPDClient, VolumeManager):
             if not self._keep_reconnecting or self.connected:
                 self._thread_resume_cond.wait()
             else:  # Can there be spurious wake-ups in Python? Should we check again?
-                self.connection_status = u"Connecting to %s:%s" % (self._host, self._port)
+                self._set_status(u"Connecting to %s:%s" % (self._host, self._port))
                 try:
                     MPDClient.connect(self, self._host, self._port)
                     self._connected()
                 except (socket.error, socket.timeout) as e:
-                    self.last_connection_failure = self.connection_status = unicode(e)
+                    self.connected = False
+                    self.last_connection_failure = unicode(e)
+                    self._set_status(self.last_connection_failure)
                     time.sleep(ReconnectingClient.reconnect_sleep_time)
                 except Exception as e:
-                    self.last_connection_failure = self.connection_status = unicode(e)
+                    self.connected = False
+                    self.last_connection_failure = unicode(e)
+                    self._set_status(self.last_connection_failure)
                     self._keep_reconnecting = False  # fatal exception; stop
                     raise
 
@@ -177,7 +186,7 @@ class ReconnectingClient(MPDClient, VolumeManager):
             def wrapper(*args, **kwargs):
                 try:
                     return attr(*args, **kwargs)
-                except (socket.timeout, ConnectionError) as err:
+                except (socket.timeout, ConnectionError, mpd.base.CommandError) as err:
                     self._connection_lost(str(err))
                     raise
                 except mpd.base.PendingCommandError:

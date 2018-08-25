@@ -3,6 +3,7 @@ from widgets.textlist import TextList
 from keyboardmanager import KeyboardManager
 import time
 import fonts
+import logging
 
 
 class PlayListsScreen(Screen):
@@ -23,12 +24,16 @@ class PlayListsScreen(Screen):
 
     def activate(self):
         super(PlayListsScreen, self).activate()
-        lists = self._client.listplaylists()
-        self._playlists = [t['playlist'] for t in lists]
-        self._tlist.set_items(self._playlists)
-        if self._current is not None:
-            self._tlist.set_selected(self._current)
-        self._last_update = time.time()
+        if (self._client.connected):
+            lists = self._client.listplaylists()
+            self._playlists = [t['playlist'] for t in lists]
+            self._tlist.set_items(self._playlists)
+            if self._current is not None:
+                self._tlist.set_selected(self._current)
+            self._last_update = time.time()
+        else:
+            logging.info("Can't load playlists: not connected yet")
+
 
     def on_keyboard_event(self, buttons_pressed):
         self._last_update = time.time()

@@ -9,7 +9,8 @@ from screens.status import StatusScreen
 import reconnectingclient
 
 # MPD connection settings
-MPD_HOST = '192.168.1.155'
+#MPD_HOST = '192.168.1.155'
+MPD_HOST = 'localhost'
 MPD_PORT = 6600
 MPD_TIMEOUT = 5
 
