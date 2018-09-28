@@ -127,7 +127,7 @@ class ReconnectingClient(MPDClient, VolumeManager):
 
     def _set_status(self, status):
         self.connection_status = status
-        logging.info(status)
+        logging.info("Connection status: %s" % status)
 
     def _connection_lost(self, reason):
         logging.warn("Connection lost: %s" % reason)

@@ -29,11 +29,11 @@ REFRESH_RATE = 0.1
 
 # Logging 
 syslog_handler=logging.handlers.SysLogHandler(address='/dev/log', facility=logging.handlers.SysLogHandler.LOG_DAEMON)
-formatter = logging.Formatter('pimpd: %(levelname)s %(message)s')
+formatter = logging.Formatter('pimpd {%(pathname)s:%(lineno)d}: %(levelname)s %(message)s')
 syslog_handler.setFormatter(formatter)
 logging.basicConfig(level=logging.INFO, handlers=[syslog_handler])
 logging.getLogger().setLevel(logging.INFO)
-logging.getLogger().addHandler(syslog_handler)
+logging.getLogger().handlers = [ syslog_handler ]
 
 mpd_client = reconnectingclient.ReconnectingClient()
 mpd_client.timeout = MPD_TIMEOUT
