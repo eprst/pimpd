@@ -26,6 +26,11 @@ class ReconnectingClient(MPDClient, VolumeManager):
         self._thread_started_cond = threading.Condition()
 
         self._keep_reconnecting = False
+        # a flag which makes 'disconnect' keep current '_keep_reconnecting' value.
+        # In general we would like 'disconnect' to set '_keep_reconnecting' to False
+        # only when called by external code, but sometimes it's called by 'mpd/base.py',
+        # i.e. our superclass. We want to treat such calls as '_disconnect' calls
+        self._freeze_keep_reconnecting = False
         self._reconnect_thread = threading.Thread(target=self._reconnect)
         self._reconnect_thread.setDaemon(True)
 
@@ -43,10 +48,14 @@ class ReconnectingClient(MPDClient, VolumeManager):
         self._connected_callbacks.remove(callback)
 
     def disconnect(self):
-        self._keep_reconnecting = False
-        if self.connected:
-            self.connected = False
-            MPDClient.disconnect(self)
+        if not self._freeze_keep_reconnecting:
+            self._keep_reconnecting = False
+        self._disconnect()
+
+    def _disconnect(self):
+        # if self.connected:
+        self.connected = False
+        MPDClient.disconnect(self)
 
     def connect(self, host, port=None, timeout=None):
         if timeout:
@@ -56,7 +65,7 @@ class ReconnectingClient(MPDClient, VolumeManager):
 
         try:
             if self.connected:
-                self.disconnect()
+                self._disconnect()
 
             self._host = host
             self._port = port
@@ -70,7 +79,7 @@ class ReconnectingClient(MPDClient, VolumeManager):
     def volume(self):
         if self.connected:
             status = MPDClient.status(self)
-            return int(status['volume'])
+            return max(0,int(status['volume'])) # treat -1 as 0
         else:
             return 0
 
@@ -110,7 +119,7 @@ class ReconnectingClient(MPDClient, VolumeManager):
                 except UnicodeError:
                     pass # already unicode? give up..
         if not line.endswith("\n"):
-            self.disconnect()
+            self._disconnect()
             raise ConnectionError("Connection lost while reading line")
         line = line.rstrip("\n")
         if line.startswith(mpd.base.ERROR_PREFIX):
@@ -135,9 +144,7 @@ class ReconnectingClient(MPDClient, VolumeManager):
 
         try:
             self.last_connection_failure = reason
-            if self.connected:
-                self.connected = False
-                MPDClient.disconnect(self)
+            self._disconnect()
         except Exception as e: # shit happens inside mpd library sometimes
             logging.error(e.message)
             logging.error(traceback.format_exc())
@@ -161,23 +168,30 @@ class ReconnectingClient(MPDClient, VolumeManager):
         self._thread_started_cond.release()
 
         while True:
-            if not self._keep_reconnecting or self.connected:
+            if self.connected or not self._keep_reconnecting:
+                logging.info("Waiting")
                 self._thread_resume_cond.wait()
             else:  # Can there be spurious wake-ups in Python? Should we check again?
                 self._set_status(u"Connecting to %s:%s" % (self._host, self._port))
                 try:
-                    MPDClient.connect(self, self._host, self._port)
+                    try:
+                        self._freeze_keep_reconnecting = True
+                        MPDClient.connect(self, self._host, self._port)
+                    finally:
+                        self._freeze_keep_reconnecting = False
                     self._connected()
                 except (socket.error, socket.timeout) as e:
                     self.connected = False
-                    self.last_connection_failure = unicode(e)
+                    self.last_connection_failure = u"Non-fatal: %s" % unicode(e)
                     self._set_status(self.last_connection_failure)
+                    logging.info("Sleeping before retrying")
                     time.sleep(ReconnectingClient.reconnect_sleep_time)
+                    logging.info("Retrying")
                 except Exception as e:
                     self.connected = False
-                    self.last_connection_failure = unicode(e)
+                    self.last_connection_failure = u"Fatal: %s" % unicode(e)
                     self._set_status(self.last_connection_failure)
-                    self._keep_reconnecting = False  # fatal exception; stop
+                    # self._keep_reconnecting = False  # fatal exception; stop
                     raise
 
     def __getattribute__(self, item):
