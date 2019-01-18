@@ -63,9 +63,7 @@ class MainScreen(Screen):
         self._stop_idle()
 
     def _connected(self):
-        self._update_status()
-        # print("_connected: idle")
-        self._client.send_idle()
+        self._force_update()
 
     def _idle_update_status(self):
         try:
