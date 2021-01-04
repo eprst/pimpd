@@ -5,6 +5,7 @@ import socket
 
 import mpd
 import fonts
+import logging
 
 from widgets.progressbar import ProgressBar
 from widgets.playing import PlayingWidget
@@ -63,6 +64,7 @@ class MainScreen(Screen):
         self._stop_idle()
 
     def _connected(self):
+        logging.info("Main screen connected, focing update")
         self._force_update()
 
     def _idle_update_status(self):
