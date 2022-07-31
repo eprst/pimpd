@@ -1,10 +1,11 @@
-This a python 2.x script for conrolling MPD daemon using a Paspberry Pi with Adafruit 128x64 OLED
+This a python 3.x script for conrolling MPD daemon using a Paspberry Pi with Adafruit 128x64 OLED
 [bonnet](https://www.adafruit.com/product/3531).
 
 # Installing
 - start by following https://learn.adafruit.com/adafruit-128x64-oled-bonnet-for-raspberry-pi/usage
-- install [python-mpd2](https://github.com/Mic92/python-mpd2/): `pip install python-mpd2`
-- ~~If you want to use [snapcast](https://github.com/badaix/snapcast) volume manager: `pip install snapcast`~~
+- you might need to install `python3-pil` and `python3-rpi.gpio`
+- install `python3-mpd`
+- ~~install [python-mpd2](https://github.com/Mic92/python-mpd2/): `pip install python-mpd2`~~
 
 # Configuring
 Edit `pimpd/pimpd.py` to your liking, all configuration options are at the top. There are also some tweakable parameters

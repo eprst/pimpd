@@ -1,6 +1,6 @@
 import math
 
-from scrollingtext import ScrollingText
+from widgets.scrollingtext import ScrollingText
 from widget import Widget
 
 
@@ -36,7 +36,7 @@ class TextList(Widget):
         self._on_empty_items()
 
     def _middle_line(self):
-        return self._lines[(len(self._lines) - 1) / 2]
+        return self._lines[int((len(self._lines) - 1) / 2)]
 
     def _on_empty_items(self):
         self._reset_lines()

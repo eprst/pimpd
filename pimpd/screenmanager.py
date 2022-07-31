@@ -5,7 +5,9 @@ import traceback
 import logging
 from PIL import Image
 from PIL import ImageDraw
-import Adafruit_SSD1306
+import board
+import busio
+import adafruit_ssd1306
 
 
 class ScreenManager(object):
@@ -19,8 +21,10 @@ class ScreenManager(object):
         self._screen_off = False
         self._redraw = False
         self._kill = False
-        RST = 24
-        self._disp = Adafruit_SSD1306.SSD1306_128_64(rst=RST)
+        i2c = busio.I2C(board.SCL, board.SDA)
+        self._disp = adafruit_ssd1306.SSD1306_I2C(128, 64, i2c)
+        # RST = 24
+        # self._disp = adafruit_ssd1306.SSD1306_128_64(rst=RST)
 
     def shutdown(self):
         self._kill = True
@@ -57,10 +61,10 @@ class ScreenManager(object):
 
     def dim(self):
         # disp.dim is broken, see https://github.com/adafruit/Adafruit_Python_SSD1306/issues/23
-        self._disp.set_contrast(0)
+        self._disp.contrast(0)
 
     def undim(self):
-        self._disp.set_contrast(0xCF)  # or 0x9F
+        self._disp.contrast(0xCF)  # or 0x9F
 
     def screen_off(self):
         self._screen_off = True
@@ -76,9 +80,9 @@ class ScreenManager(object):
 
     def run(self):
         # starts the main loop in the current thread
-        self._disp.begin()
-        self._disp.clear()
-        self._disp.display()
+        # self._disp.begin()
+        self._disp.fill(0)
+        self._disp.show()
 
         width = self._disp.width
         height = self._disp.height
@@ -127,12 +131,12 @@ class ScreenManager(object):
                         self._disp.image(image.transpose(Image.ROTATE_180))
                     else:
                         self._disp.image(image)
-                    self._disp.display()
+                    self._disp.show()
 
                 time.sleep(self._refresh_rate)
             except Exception as e:
-                logging.error(e.message)
+                logging.error(repr(e))
                 logging.error(traceback.format_exc())
 
-        self._disp.clear()
-        self._disp.display()
+        self._disp.fill(0)
+        self._disp.show()

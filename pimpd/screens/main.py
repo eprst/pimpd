@@ -22,7 +22,7 @@ class MainScreen(Screen):
     A_PLAYLIST = u'Дождь'
     # playlist to start on pressing 'A' and 'B' buttons together
     # (doesn't work, have to debug)
-    AB_PLAYLIST = u'шум со звуком в конце'
+    AB_PLAYLIST = u'Спи, моя радость, усни'
     # volume adjustment step
     VOLUME_STEP = 3
 
@@ -139,7 +139,7 @@ class MainScreen(Screen):
         self._stop_idle()
         self._update_status()
         # print("_force_update: idle")
-        self._client.send_idle()
+        ## KS fixme self._client.send_idle()
 
     def tick(self):
         try:
@@ -193,7 +193,8 @@ class MainScreen(Screen):
 
             if resume_idle:
                 # print("on_kbd_event: idle")
-                self._client.send_idle()
+                ## KS fixme self._client.send_idle()
+                self._client.idle()
 
         except (socket.timeout, mpd.ConnectionError):
             self._screen_manager.set_screen(self._status_screen)

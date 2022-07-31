@@ -91,7 +91,7 @@ class ReconnectingClient(MPDClient, VolumeManager):
         if self.connected:
             try:
                 MPDClient.noidle(self)
-            except mpd.base.CommandError:
+            except (mpd.base.CommandError, NotImplementedError):
                 pass
 
     def play_playlist(self, name):
@@ -108,14 +108,14 @@ class ReconnectingClient(MPDClient, VolumeManager):
 
     # override _read_line to be more tolerant to unicode errors
     def _read_line(self):
-        line = self._rfile.readline()
+        line = self._rbfile.readline()
         if self.use_unicode:
             try:
                 # why isn't it an overloadable method?
-                line = unicode(line, "utf-8")
+                line = str(line, "utf-8")
             except UnicodeError:
                 try:
-                    line = unicode(line)
+                    line = str(line)
                 except UnicodeError:
                     pass # already unicode? give up..
         if not line.endswith("\n"):
@@ -182,14 +182,14 @@ class ReconnectingClient(MPDClient, VolumeManager):
                     self._connected()
                 except (socket.error, socket.timeout) as e:
                     self.connected = False
-                    self.last_connection_failure = u"Non-fatal: %s" % unicode(e)
+                    self.last_connection_failure = u"Non-fatal: %s" % str(e)
                     self._set_status(self.last_connection_failure)
                     logging.info("Sleeping before retrying")
                     time.sleep(ReconnectingClient.reconnect_sleep_time)
                     logging.info("Retrying")
                 except Exception as e:
                     self.connected = False
-                    self.last_connection_failure = u"Fatal: %s" % unicode(e)
+                    self.last_connection_failure = u"Fatal: %s" % str(e)
                     self._set_status(self.last_connection_failure)
                     # self._keep_reconnecting = False  # fatal exception; stop
                     raise
