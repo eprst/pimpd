@@ -11,6 +11,7 @@ class PlayListsScreen(Screen):
 
     def __init__(self, screen_manager, keyboard_manager, client):
         super(PlayListsScreen, self).__init__(screen_manager, keyboard_manager)
+        self._last_update = None
         self._client = client
         self._current = None
         self._playlists = []
@@ -24,7 +25,7 @@ class PlayListsScreen(Screen):
 
     def activate(self):
         super(PlayListsScreen, self).activate()
-        if (self._client.connected):
+        if self._client.connected:
             lists = self._client.listplaylists()
             self._playlists = [t['playlist'] for t in lists]
             self._tlist.set_items(self._playlists)
@@ -33,7 +34,6 @@ class PlayListsScreen(Screen):
             self._last_update = time.time()
         else:
             logging.info("Can't load playlists: not connected yet")
-
 
     def on_keyboard_event(self, buttons_pressed):
         self._last_update = time.time()

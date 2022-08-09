@@ -1,18 +1,19 @@
+# from mpd.asyncio import MPDClient, ConnectionError
 from mpd import MPDClient, ConnectionError
 from volumemanager import VolumeManager
-import mpd
 import threading
 import socket
 import logging
 import traceback
 import time
+import mpd
 
 
 class ReconnectingClient(MPDClient, VolumeManager):
-    reconnect_sleep_time = 1 # seconds
+    reconnect_sleep_time = 1  # seconds
 
     def __init__(self):
-        super(ReconnectingClient, self).__init__(use_unicode=True)
+        super(ReconnectingClient, self).__init__()
         self._set_status(u"Initializing")
         self.last_connection_failure = None
         self.connected = False
@@ -27,12 +28,12 @@ class ReconnectingClient(MPDClient, VolumeManager):
 
         self._keep_reconnecting = False
         # a flag which makes 'disconnect' keep current '_keep_reconnecting' value.
-        # In general we would like 'disconnect' to set '_keep_reconnecting' to False
+        # In general, we would like 'disconnect' to set '_keep_reconnecting' to False
         # only when called by external code, but sometimes it's called by 'mpd/base.py',
         # i.e. our superclass. We want to treat such calls as '_disconnect' calls
         self._freeze_keep_reconnecting = False
         self._reconnect_thread = threading.Thread(target=self._reconnect)
-        self._reconnect_thread.setDaemon(True)
+        self._reconnect_thread.daemon = True
 
         self._thread_started_cond.acquire()
         self._reconnect_thread.start()
@@ -57,10 +58,7 @@ class ReconnectingClient(MPDClient, VolumeManager):
         self.connected = False
         MPDClient.disconnect(self)
 
-    def connect(self, host, port=None, timeout=None):
-        if timeout:
-            self.timeout = timeout
-
+    def connect(self, host, port=6600, loop=None):
         self._thread_resume_cond.acquire()
 
         try:
@@ -70,7 +68,7 @@ class ReconnectingClient(MPDClient, VolumeManager):
             self._host = host
             self._port = port
             self._keep_reconnecting = True
-            self._thread_resume_cond.notifyAll()
+            self._thread_resume_cond.notify_all()
 
         finally:
             self._thread_resume_cond.release()
@@ -78,46 +76,48 @@ class ReconnectingClient(MPDClient, VolumeManager):
     @property
     def volume(self):
         if self.connected:
-            status = MPDClient.status(self)
-            return max(0,int(status['volume'])) # treat -1 as 0
+            status = await MPDClient.status(self)
+            return max(0, int(status['volume']))  # treat -1 as 0
         else:
             return 0
 
     def set_volume(self, volume):
         if self.connected:
-            MPDClient.setvol(self, volume)
+            MPDClient.setvol(self, volume)  # TODO: await? catch disconnected exceptions?
 
-    def safe_noidle(self):
-        if self.connected:
-            try:
-                MPDClient.noidle(self)
-            except (mpd.base.CommandError, NotImplementedError):
-                pass
+    # def safe_noidle(self):
+    #     if self.connected:
+    #         try:
+    #             MPDClient.noidle(self)
+    #         except (mpd.base.CommandError, NotImplementedError):
+    #             pass
+
+    # def noidle(self):
+    #     self.safe_noidle()
 
     def play_playlist(self, name):
-        self.safe_noidle()
+        # self.safe_noidle()
         self.clear()
         self.load(name)
         self.play(0)
 
     def currentsong(self):
         try:
-            return MPDClient.currentsong(self)
+            return await MPDClient.currentsong(self)
         except UnicodeDecodeError as e:
             return str(e)
 
     # override _read_line to be more tolerant to unicode errors
     def _read_line(self):
         line = self._rbfile.readline()
-        if self.use_unicode:
+        try:
+            # why isn't it an overloadable method?
+            line = str(line, "utf-8")
+        except UnicodeError:
             try:
-                # why isn't it an overloadable method?
-                line = str(line, "utf-8")
+                line = str(line)
             except UnicodeError:
-                try:
-                    line = str(line)
-                except UnicodeError:
-                    pass # already unicode? give up..
+                pass  # already unicode? give up.
         if not line.endswith("\n"):
             self._disconnect()
             raise ConnectionError("Connection lost while reading line")
@@ -139,20 +139,21 @@ class ReconnectingClient(MPDClient, VolumeManager):
         logging.info("Connection status: %s" % status)
 
     def _connection_lost(self, reason):
-        logging.warn("Connection lost: %s" % reason)
+        logging.warning("Connection lost: %s" % reason)
         self._thread_resume_cond.acquire()
 
         try:
             self.last_connection_failure = reason
             self._disconnect()
-        except Exception as e: # shit happens inside mpd library sometimes
-            logging.error(e.message)
+        except Exception as e:  # shit happens inside mpd library sometimes
+            logging.error(e)
             logging.error(traceback.format_exc())
         finally:
-            self._thread_resume_cond.notifyAll()
+            self._thread_resume_cond.notify_all()
             self._thread_resume_cond.release()
 
     def _connected(self):
+        MPDClient.idle()
         self._set_status(u"Connected to %s:%s" % (self._host, self._port))
         for callback in self._connected_callbacks:
             callback()
@@ -164,7 +165,7 @@ class ReconnectingClient(MPDClient, VolumeManager):
         # only needed the first time: notify constructor that
         # thread has started and acquired _threadResumeCond
         self._thread_started_cond.acquire()
-        self._thread_started_cond.notifyAll()
+        self._thread_started_cond.notify_all()
         self._thread_started_cond.release()
 
         while True:
@@ -176,7 +177,7 @@ class ReconnectingClient(MPDClient, VolumeManager):
                 try:
                     try:
                         self._freeze_keep_reconnecting = True
-                        MPDClient.connect(self, self._host, self._port)
+                        await MPDClient.connect(self, self._host, self._port)
                     finally:
                         self._freeze_keep_reconnecting = False
                     self._connected()
@@ -199,7 +200,7 @@ class ReconnectingClient(MPDClient, VolumeManager):
         if hasattr(attr, '__call__'):
             def wrapper(*args, **kwargs):
                 try:
-                    return attr(*args, **kwargs)
+                    return await attr(*args, **kwargs)
                 except (socket.timeout, ConnectionError, mpd.base.CommandError) as err:
                     self._connection_lost(str(err))
                     raise
@@ -210,3 +211,9 @@ class ReconnectingClient(MPDClient, VolumeManager):
             return wrapper
         else:
             return attr
+
+    def command_list_ok_begin(self):
+        pass
+
+    def command_list_end(self):
+        pass

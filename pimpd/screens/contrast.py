@@ -10,8 +10,8 @@ class ContrastScreen(Screen):
     def __init__(self, screen_manager, keyboard_manager, disp):
         super(ContrastScreen, self).__init__(screen_manager, keyboard_manager)
         self._disp = disp
-        self._contrast = 0xCF # initial value from SSD1306.py
-        self._pbar = ProgressBar((0,25), (128,14), 255)
+        self._contrast = 0xCF  # initial value from SSD1306.py
+        self._pbar = ProgressBar((0, 25), (128, 14), 255)
         self._pbar.set_value(0xCF)
         font = fonts.DEFAULT_FONT_12
         self._label = ScrollingText((25, 5), (100, 15), font, 'Contrast')

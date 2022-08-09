@@ -62,7 +62,7 @@ class KeyboardManager:
         self._stopmon = threading.Condition()
 
         self._thread = threading.Thread(target=self._poll)
-        self._thread.setDaemon(True)
+        self._thread.daemon = True
         self._thread.start()
 
     def add_callback(self, callback):

@@ -9,6 +9,9 @@ class ScrollingText(Widget):
     def __init__(self, position, size, font, text):
         # type: (ScrollingText, (int, int), (int, int), ImageFont, str) -> None
         super(ScrollingText, self).__init__(position, size)
+        self._pause = None
+        self._reversing = None
+        self._offset = None
         self._font = font
         self._text = None
         self.set_text(text)
@@ -30,11 +33,11 @@ class ScrollingText(Widget):
                 if self._size[1] < self._text_size[1]:
                     logging.warning(u"Warning! widget height {} is smaller than font height {} (text: '{}')".format(self._size[1], self._text_size[1], text))
             except IOError:
-                self.set_text(u"err") # getting 'IOError: invalid composite glyph' periodically
+                self.set_text(u"err")  # getting 'IOError: invalid composite glyph' periodically
 
     def set_scroll(self, scroll):
         self._scroll = scroll
-        self.set_text(self._text) # reset scrolling
+        self.set_text(self._text)  # reset scrolling
 
     def _max_offset(self):
         return max(0, self._text_size[0] - self._size[0])
@@ -60,7 +63,6 @@ class ScrollingText(Widget):
                         self._pause = 0
 
         self._need_refresh |= self._offset != prev_offset
-
 
     def _draw(self, img, draw):
         # type: (ScrollingText, ImageDraw) -> None

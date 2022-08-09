@@ -64,18 +64,19 @@ class MainScreen(Screen):
         self._stop_idle()
 
     def _connected(self):
-        logging.info("Main screen connected, focing update")
+        logging.info("Main screen connected, forcing update")
         self._force_update()
 
     def _idle_update_status(self):
-        try:
-            self._client.fetch_idle()
-        except mpd.base.PendingCommandError:
-            pass
+        # we don't need this now. TODO kill
+        # try:
+        #     self._client.fetch_idle()
+        # except mpd.base.PendingCommandError:
+        #     pass
 
         self._update_status()
         # print("_idle_update_status: idle")
-        self._client.send_idle()  # continue idling
+        # self._client.send_idle()  # continue idling
 
     def _update_status(self):
         st = self._client.status()
@@ -158,7 +159,6 @@ class MainScreen(Screen):
         # print("on_kbd_event: noidle")
         self._stop_idle()
         try:
-
             resume_idle = True
 
             if buttons_pressed == [KeyboardManager.UP] or buttons_pressed == [KeyboardManager.DOWN]:

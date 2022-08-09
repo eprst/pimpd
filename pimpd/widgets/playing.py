@@ -8,6 +8,7 @@ class PlayingWidget(Widget):
 
     def __init__(self, position, size):
         super(PlayingWidget, self).__init__(position, size)
+        self._need_refresh = None
         self._status = PlayingWidget.STOPPED
 
     @property

@@ -60,7 +60,6 @@ class ScreenManager(object):
             self._screen.activate()
 
     def dim(self):
-        # disp.dim is broken, see https://github.com/adafruit/Adafruit_Python_SSD1306/issues/23
         self._disp.contrast(0)
 
     def undim(self):
@@ -135,7 +134,7 @@ class ScreenManager(object):
 
                 time.sleep(self._refresh_rate)
             except Exception as e:
-                logging.error(repr(e))
+                logging.error(e)
                 logging.error(traceback.format_exc())
 
         self._disp.fill(0)

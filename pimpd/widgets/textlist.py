@@ -10,6 +10,7 @@ class TextList(Widget):
 
     def __init__(self, position, size, font, empty_items_text):
         super(TextList, self).__init__(position, size)
+        self._need_refresh = None
         self._font = font
         self._emtpy_items_text = empty_items_text
 

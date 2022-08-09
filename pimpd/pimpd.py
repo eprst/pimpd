@@ -1,4 +1,3 @@
-import logging
 import logging.handlers
 import signal
 import screenmanager
@@ -9,7 +8,7 @@ from screens.status import StatusScreen
 import reconnectingclient
 
 # MPD connection settings
-#MPD_HOST = '192.168.1.155'
+# MPD_HOST = '192.168.1.155'
 MPD_HOST = 'localhost'
 MPD_PORT = 6600
 MPD_TIMEOUT = 5
@@ -28,12 +27,12 @@ REFRESH_RATE = 0.1
 # End of configuration #####################################################
 
 # Logging 
-syslog_handler=logging.handlers.SysLogHandler(address='/dev/log', facility=logging.handlers.SysLogHandler.LOG_DAEMON)
+syslog_handler = logging.handlers.SysLogHandler(address='/dev/log', facility=logging.handlers.SysLogHandler.LOG_DAEMON)
 formatter = logging.Formatter('pimpd {%(pathname)s:%(lineno)d}: %(levelname)s %(message)s')
 syslog_handler.setFormatter(formatter)
 logging.basicConfig(level=logging.INFO, handlers=[syslog_handler])
 logging.getLogger().setLevel(logging.INFO)
-logging.getLogger().handlers = [ syslog_handler ]
+logging.getLogger().handlers = [syslog_handler]
 
 mpd_client = reconnectingclient.ReconnectingClient()
 mpd_client.timeout = MPD_TIMEOUT
@@ -45,8 +44,10 @@ volume_manager = mpd_client
 keyboard_manager = KeyboardManager(ROTATE)
 screen_manager = screenmanager.ScreenManager(ROTATE, REFRESH_RATE)
 
+
 def on_kill(signum, frame):
     screen_manager.shutdown()
+
 
 signal.signal(signal.SIGTERM, on_kill)
 signal.signal(signal.SIGINT, on_kill)
