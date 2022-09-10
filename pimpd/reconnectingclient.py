@@ -1,12 +1,12 @@
-# from mpd.asyncio import MPDClient, ConnectionError
-from mpd import MPDClient, ConnectionError
-from volumemanager import VolumeManager
-import threading
-import socket
+import asyncio
 import logging
+import socket
 import traceback
-import time
+
 import mpd
+from mpd.asyncio import MPDClient
+
+from volumemanager import VolumeManager
 
 
 class ReconnectingClient(MPDClient, VolumeManager):
@@ -16,182 +16,155 @@ class ReconnectingClient(MPDClient, VolumeManager):
         super(ReconnectingClient, self).__init__()
         self._set_status(u"Initializing")
         self.last_connection_failure = None
-        self.connected = False
+        self._connected = False
 
         self._host = None
         self._port = None
 
         self._connected_callbacks = []
-
-        self._thread_resume_cond = threading.Condition()
-        self._thread_started_cond = threading.Condition()
-
+        self._idle_callbacks = []
         self._keep_reconnecting = False
-        # a flag which makes 'disconnect' keep current '_keep_reconnecting' value.
-        # In general, we would like 'disconnect' to set '_keep_reconnecting' to False
-        # only when called by external code, but sometimes it's called by 'mpd/base.py',
-        # i.e. our superclass. We want to treat such calls as '_disconnect' calls
-        self._freeze_keep_reconnecting = False
-        self._reconnect_thread = threading.Thread(target=self._reconnect)
-        self._reconnect_thread.daemon = True
 
-        self._thread_started_cond.acquire()
-        self._reconnect_thread.start()
-        self._thread_started_cond.wait()
-        self._thread_started_cond.release()
+        self._disconnected_event = asyncio.Event()
+        self._reconnect_task = asyncio.create_task(self._reconnect_loop())
+        self._reconnect_task.add_done_callback(self._handle_reconnect_result)
 
-    def add_connected_callback(self, callback):
+        self._idle_task: asyncio.Task | None = None
+
+    @staticmethod
+    def _handle_reconnect_result(task: asyncio.Task) -> None:
+        try:
+            task.result()
+        except asyncio.CancelledError:
+            pass
+        except Exception as e:
+            logging.info(e)
+        except KeyboardInterrupt as e:
+            logging.info(e)
+
+    async def add_connected_callback(self, callback):
         self._connected_callbacks.append(callback)
-        if self.connected:
-            callback()
+        if self._connected:
+            await callback()
 
     def remove_connected_callback(self, callback):
         self._connected_callbacks.remove(callback)
 
+    def add_idle_callback(self, callback):
+        self._idle_callbacks.append(callback)
+
+    def remove_idle_callback(self, callback):
+        self._idle_callbacks.remove(callback)
+
     def disconnect(self):
-        if not self._freeze_keep_reconnecting:
-            self._keep_reconnecting = False
+        self._keep_reconnecting = False
         self._disconnect()
 
+    def close(self):
+        if self._connected:
+            self.disconnect()
+        self._reconnect_task.cancel()
+
     def _disconnect(self):
-        # if self.connected:
-        self.connected = False
-        MPDClient.disconnect(self)
+        self._on_disconnected()
+        try:
+            MPDClient.disconnect(self)
+        finally:
+            self._disconnected_event.set()
 
     def connect(self, host, port=6600, loop=None):
-        self._thread_resume_cond.acquire()
+        self._host = host
+        self._port = port
+        self._keep_reconnecting = True
 
-        try:
-            if self.connected:
-                self._disconnect()
-
-            self._host = host
-            self._port = port
-            self._keep_reconnecting = True
-            self._thread_resume_cond.notify_all()
-
-        finally:
-            self._thread_resume_cond.release()
+        if self._connected:
+            self._disconnect()
+        else:
+            self._disconnected_event.set()
 
     @property
-    def volume(self):
-        if self.connected:
+    def connected(self) -> bool:
+        return self._connected
+
+    @property
+    async def volume(self) -> int:
+        if self._connected:
             status = await MPDClient.status(self)
             return max(0, int(status['volume']))  # treat -1 as 0
         else:
             return 0
 
-    def set_volume(self, volume):
-        if self.connected:
-            MPDClient.setvol(self, volume)  # TODO: await? catch disconnected exceptions?
+    async def set_volume(self, volume: int) -> None:
+        if self._connected:
+            await MPDClient.setvol(self, volume)
 
-    # def safe_noidle(self):
-    #     if self.connected:
-    #         try:
-    #             MPDClient.noidle(self)
-    #         except (mpd.base.CommandError, NotImplementedError):
-    #             pass
-
-    # def noidle(self):
-    #     self.safe_noidle()
-
-    def play_playlist(self, name):
-        # self.safe_noidle()
-        self.clear()
-        self.load(name)
-        self.play(0)
-
-    def currentsong(self):
-        try:
-            return await MPDClient.currentsong(self)
-        except UnicodeDecodeError as e:
-            return str(e)
-
-    # override _read_line to be more tolerant to unicode errors
-    def _read_line(self):
-        line = self._rbfile.readline()
-        try:
-            # why isn't it an overloadable method?
-            line = str(line, "utf-8")
-        except UnicodeError:
-            try:
-                line = str(line)
-            except UnicodeError:
-                pass  # already unicode? give up.
-        if not line.endswith("\n"):
-            self._disconnect()
-            raise ConnectionError("Connection lost while reading line")
-        line = line.rstrip("\n")
-        if line.startswith(mpd.base.ERROR_PREFIX):
-            error = line[len(mpd.base.ERROR_PREFIX):].strip()
-            raise mpd.base.CommandError(error)
-        if self._command_list is not None:
-            if line == mpd.base.NEXT:
-                return
-            if line == mpd.base.SUCCESS:
-                raise mpd.base.ProtocolError("Got unexpected '{}'".format(mpd.base.SUCCESS))
-        elif line == mpd.base.SUCCESS:
-            return
-        return line
+    async def play_playlist(self, name: str) -> None:
+        await self.clear()
+        await self.load(name)
+        await self.play(0)
 
     def _set_status(self, status):
         self.connection_status = status
-        logging.info("Connection status: %s" % status)
+        logging.info(f"Connection status: {status}")
 
     def _connection_lost(self, reason):
-        logging.warning("Connection lost: %s" % reason)
-        self._thread_resume_cond.acquire()
+        logging.warning(f"Connection lost: {reason}")
 
         try:
             self.last_connection_failure = reason
             self._disconnect()
+            self._keep_reconnecting = True
         except Exception as e:  # shit happens inside mpd library sometimes
             logging.error(e)
             logging.error(traceback.format_exc())
-        finally:
-            self._thread_resume_cond.notify_all()
-            self._thread_resume_cond.release()
 
-    def _connected(self):
-        MPDClient.idle()
-        self._set_status(u"Connected to %s:%s" % (self._host, self._port))
+    async def _on_connected(self):
+        self._set_status(f"Connected to {self._host}:{self._port}")
+        self._connected = True
         for callback in self._connected_callbacks:
-            callback()
-        self.connected = True
+            await callback()
+        self._disconnected_event.clear()
+        self._idle_task = asyncio.create_task(self._idle_loop())
 
-    def _reconnect(self):
-        self._thread_resume_cond.acquire()
+    def _on_disconnected(self):
+        self._connected = False
+        if self._idle_task is not None:
+            self._idle_task.cancel()
+            self._idle_task = None
 
-        # only needed the first time: notify constructor that
-        # thread has started and acquired _threadResumeCond
-        self._thread_started_cond.acquire()
-        self._thread_started_cond.notify_all()
-        self._thread_started_cond.release()
+    async def _idle_loop(self):
+        try:
+            async for s in self.idle():
+                for callback in self._idle_callbacks:
+                    await callback(s)
+        except asyncio.CancelledError:
+            pass
 
+    async def _reconnect_loop(self):
         while True:
-            if self.connected or not self._keep_reconnecting:
-                logging.info("Waiting")
-                self._thread_resume_cond.wait()
+
+            if self._connected or not self._keep_reconnecting:
+                logging.info('Waiting')
+                print("connected={}, keep_reconnecting={}".format(self._connected, self._keep_reconnecting))
+                await self._disconnected_event.wait()
+                self._disconnected_event.clear()
+                # await asyncio.sleep(ReconnectingClient.reconnect_sleep_time)
             else:  # Can there be spurious wake-ups in Python? Should we check again?
-                self._set_status(u"Connecting to %s:%s" % (self._host, self._port))
+                self._set_status(f"Connecting to {self._host}:{self._port}")
                 try:
-                    try:
-                        self._freeze_keep_reconnecting = True
-                        await MPDClient.connect(self, self._host, self._port)
-                    finally:
-                        self._freeze_keep_reconnecting = False
-                    self._connected()
+                    await MPDClient.connect(self, self._host, self._port)
+                    await self._on_connected()
                 except (socket.error, socket.timeout) as e:
-                    self.connected = False
                     self.last_connection_failure = u"Non-fatal: %s" % str(e)
                     self._set_status(self.last_connection_failure)
+                    self._on_disconnected()
                     logging.info("Sleeping before retrying")
-                    time.sleep(ReconnectingClient.reconnect_sleep_time)
+                    await asyncio.sleep(ReconnectingClient.reconnect_sleep_time)
                     logging.info("Retrying")
                 except Exception as e:
-                    self.connected = False
                     self.last_connection_failure = u"Fatal: %s" % str(e)
                     self._set_status(self.last_connection_failure)
+                    self._on_disconnected()
                     # self._keep_reconnecting = False  # fatal exception; stop
                     raise
 
@@ -200,12 +173,20 @@ class ReconnectingClient(MPDClient, VolumeManager):
         if hasattr(attr, '__call__'):
             def wrapper(*args, **kwargs):
                 try:
-                    return await attr(*args, **kwargs)
-                except (socket.timeout, ConnectionError, mpd.base.CommandError) as err:
-                    self._connection_lost(str(err))
-                    raise
-                except mpd.base.PendingCommandError:
-                    logging.info('Pending commands: {}'.format(self._pending))
+                    return attr(*args, **kwargs)
+                    # print("in {}".format(attr))
+                    # res = attr(*args, **kwargs)
+                    # print("out {}".format(attr))
+                    # return res
+                # except (socket.timeout, mpd.base.ConnectionError, mpd.base.Comm) as err:
+                #     print("BOOOOM0")
+                #     self._connection_lost(str(err))
+                #     raise
+                # except mpd.base.PendingCommandError:
+                #     logging.info('Pending commands: {}'.format(self._pending))
+                #     raise
+                except mpd.base.ConnectionError as e:
+                    self._connection_lost(str(e))
                     raise
 
             return wrapper

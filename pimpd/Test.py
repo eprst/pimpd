@@ -1,29 +1,39 @@
 from __future__ import print_function
 
-from select import select
+import asyncio
+import logging
 
-import mpd
 import reconnectingclient
-import time
-import socket
 
-client = reconnectingclient.ReconnectingClient()
+client: reconnectingclient.ReconnectingClient | None = None
 
 
-def connected():
+async def connected():
     print("Connected!")
-    update()
-    client.send_idle()
+    await update()
+    # while client.connected:
+    #     print("tick")
+    #     try:
+    #         async for subsystem in client.idle():
+    #             print("Idle change in %s" % subsystem)
+    #             await update()
+    #     except mpd.base.ConnectionError:
+    #         print("Connection lost, I'm done")
 
 
-def update():
+async def idle(subsystems: list[str]) -> None:
+    print("Idle change in", subsystems)
+    await update()
+
+
+async def update():
     print("update()")
-    cs = client.currentsong()
+    cs = await client.currentsong()
     print('artist: {}'.format(cs.get('artist', '???')))
     print('title: {}'.format(cs.get('title', None)))
     print('file: {}'.format(cs.get('file', None)))
 
-    st = client.status()
+    st = await client.status()
     elapsed = float(st.get('elapsed', 0.0))
     if elapsed == 0.0:
         elapsed = float(st.get('time', 0.0))
@@ -39,41 +49,58 @@ def update():
     print(st)
 
     lists = client.listplaylists()
-    print([t['playlist'] for t in lists])
+    print([t['playlist'] async for t in lists])
     print("/update()")
 
 
-def idle_update():
+async def main():
+    global client
+    client = reconnectingclient.ReconnectingClient()
+
     try:
-        client.fetch_idle()
-    except mpd.base.PendingCommandError:
-        pass
+        client.timeout = 5
+        # client.connect("192.168.1.155", 6600)
+        client.connect("127.0.0.1", 6600)
+        await client.add_connected_callback(connected)
+        client.add_idle_callback(idle)
 
-    update()
-    client.send_idle()  # continue idling
+        await asyncio.Event().wait()  # sleep forever
 
+        # while True:
+        #     print("tick")
+        #     try:
+        #         if client.connected:
+        #             async for subsystem in client.idle():
+        #                 print("Idle change in %s" % subsystem)
+        #                 await update()
+        #             # await update()
+        #         else:
+        #             print("Connection status: %s" % client.connection_status)
+        #             print("Previous error: %s" % client.last_connection_failure)
+        #
+        #         await asyncio.sleep(1)
+        #     except mpd.base.ConnectionError:
+        #         print("Connection lost")
+
+    except KeyboardInterrupt:
+        print("<><>><><><><><<")
+        client.close()
+
+
+# def shutdown(sig, frame):
+#     print("sh<<")
+#     client.close()
+#     asyncio.get_event_loop().close()
+#     asyncio.get_event_loop().stop()
+#
+#
+# for signame in (signal.SIGINT, signal.SIGTERM):
+#     signal.signal(signame, shutdown)
+
+log_format = '[%(asctime)s] [%(levelname)s] - %(message)s'
+logging.basicConfig(level=logging.INFO, format=log_format)
 
 try:
-    client.timeout = 5
-    client.connect("192.168.1.155", 6600)
-    client.add_connected_callback(connected)
-
-    while True:
-
-        try:
-            if client.connected:
-                can_read = select([client], [], [], 0)[0]
-                if can_read:
-                    idle_update()
-
-                # print("Volume: %d" % client.volume)
-            else:
-                print("Connection status: %s" % client.connection_status)
-                print("Previous error: %s" % client.last_connection_failure)
-
-            time.sleep(3)
-        except (socket.timeout, mpd.ConnectionError) as e:
-            print(e)
-
+    asyncio.run(main())
 except KeyboardInterrupt:
-    client.disconnect()
+    print("Bye")

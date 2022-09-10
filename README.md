@@ -29,4 +29,4 @@ sudo systemctl enable pimpd
 
 # Developing
 I'm using virtualenv only for developing on my laptop, was unable to make it work on Pi so far. Run `make` and
-IntelliJ should correctly detect some of the libraries used, except for `Adafruit_SSD1306`.
+IntelliJ should correctly detect some libraries used, except for `Adafruit_SSD1306`.

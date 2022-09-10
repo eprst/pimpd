@@ -1,30 +1,33 @@
+import asyncio
+from typing import Tuple
+
 from PIL import ImageDraw, Image, ImageChops
 
 
 class Widget(object):
-    def __init__(self, position, size):
-        # type: (Widget, (int, int), (int, int)) -> None
+    def __init__(self, position: Tuple[int, int], size: Tuple[int, int]) -> None:
         self._position = position
         self._size = size
         self._draw_border = False
         self._invert = False
         self._need_refresh = True
+        self._update_task: asyncio.Task | None = None
 
-    def set_position(self, position):
+    def set_position(self, position: Tuple[int, int]):
         self._position = position
 
     @property
-    def position(self):
+    def position(self) -> Tuple[int, int]:
         return self._position
 
-    def set_size(self, size):
+    def set_size(self, size: Tuple[int, int]):
         self._size = size
 
     @property
-    def size(self):
+    def size(self) -> Tuple[int, int]:
         return self._size
 
-    def need_refresh(self):
+    def need_refresh(self) -> bool:
         return self._need_refresh
 
     def set_draw_border(self, draw_border):
@@ -33,11 +36,23 @@ class Widget(object):
     def set_invert(self, invert):
         self._invert = invert
 
-    def tick(self):
+    def start(self):
+        if self._update_task is not None:
+            raise "widget already started!"
+        self._update_task = asyncio.create_task(self._update_loop())
         pass
 
-    def refresh(self, img, draw):
-        # type: (Widget, Image, ImageDraw) -> None
+    def stop(self):
+        if self._update_task is None:
+            raise "widget already stopped!"
+        self._update_task.cancel()
+        self._update_task = None
+        pass
+
+    async def _update_loop(self):
+        pass
+
+    def refresh(self, img: Image, draw: ImageDraw) -> None:
         buf = Image.new('1', self._size)
         buf_draw = ImageDraw.Draw(buf)
         sz = (max(0, self._size[0] - 1), max(0, self._size[1] - 1))
@@ -50,12 +65,11 @@ class Widget(object):
         if self._invert:
             buf2 = Image.new('1', self._size)
             buf2_draw = ImageDraw.Draw(buf2)
-            buf2_draw.rectangle([(0, 0), sz], outline=255, fill=1)
+            buf2_draw.rectangle((0, 0, sz[0], sz[1]), outline=255, fill=1)
             buf = ImageChops.subtract(buf2, buf)
 
         img.paste(buf, self._position)
         self._need_refresh = False
 
-    def _draw(self, img, draw):
-        # type: (Widget, Image, ImageDraw) -> None
+    def _draw(self, img: Image, draw: ImageDraw) -> None:
         pass

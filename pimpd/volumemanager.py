@@ -1,9 +1,7 @@
 class VolumeManager(object):
     @property
-    def volume(self):
-        # type: () -> int
+    async def volume(self) -> int:
         return 0
 
-    def set_volume(self, volume):
-        # type: (VolumeManager, int) -> None
+    async def set_volume(self, volume: int) -> None:
         pass

@@ -1,10 +1,18 @@
-import threading
 import time
 import logging
+import asyncio
+
+import keyboardmanager
+import screenmanager
 
 
 class Dimmer(object):
-    def __init__(self, screen_manager, keyboard_manager, dim_after, off_after, pass_through_buttons):
+    def __init__(self,
+                 screen_manager: screenmanager.ScreenManager,
+                 keyboard_manager: keyboardmanager.KeyboardManager,
+                 dim_after: int,
+                 off_after: int,
+                 pass_through_buttons: [int]) -> None:
         self._dim_after = dim_after
         self._off_after = off_after
         self._smgr = screen_manager
@@ -14,32 +22,27 @@ class Dimmer(object):
         self._dimmed = False
         self._off = False
 
-        self._lock = threading.Condition()
-
         keyboard_manager.add_callback(self._on_kbd)
+        self._update_task = asyncio.create_task(self._loop())
 
-        thread = threading.Thread(target=self._check)
-        thread.setDaemon(True)
-        thread.start()
+    async def _loop(self):
+        try:
+            while True:
+                await asyncio.sleep(1)
+                sla = time.time() - self._last_activity
 
-    def _check(self):
-        while True:
-            time.sleep(1)
-            sla = time.time() - self._last_activity
+                if self._dim_after is not None and sla > self._dim_after and not self._dimmed:
+                    logging.info("Dimmer: dimming")
+                    self._smgr.dim()
+                    self._dimmed = True
 
-            if self._dim_after is not None and sla > self._dim_after and not self._dimmed:
-                logging.info("Dimmer: dimming")
-                self._smgr.dim()
-                self._dimmed = True
-
-            if self._off_after is not None and sla > self._off_after:
-                logging.info("Dimmer: screen off")
-                self._smgr.screen_off()
-                self._dimmed = False
-                self._off = True
-                self._lock.acquire()
-                self._lock.wait()
-                self._lock.release()
+                if self._off_after is not None and sla > self._off_after and not self._off:
+                    logging.info("Dimmer: screen off")
+                    self._smgr.screen_off()
+                    self._dimmed = False
+                    self._off = True
+        except asyncio.CancelledError:
+            pass
 
     def _on_kbd(self, buttons):
         self._last_activity = time.time()
@@ -51,13 +54,9 @@ class Dimmer(object):
             self._off = False
             processed = len(buttons) == 1 and buttons[0] not in self._pass_through_buttons
         if self._dimmed:
-            logging.info("Dimmer: undimming")
+            logging.info("Dimmer: un-dimming")
             self._smgr.undim()
             self._dimmed = False
             processed = len(buttons) == 1 and buttons[0] not in self._pass_through_buttons
-
-        self._lock.acquire()
-        self._lock.notifyAll()
-        self._lock.release()
 
         return processed

@@ -1,3 +1,4 @@
+from widget import Widget
 from widgets.progressbar import ProgressBar
 from screen import Screen
 from widgets.scrollingtext import ScrollingText
@@ -16,17 +17,20 @@ class ContrastScreen(Screen):
         font = fonts.DEFAULT_FONT_12
         self._label = ScrollingText((25, 5), (100, 15), font, 'Contrast')
 
-    def on_keyboard_event(self, buttons_pressed):
+    async def on_keyboard_event(self, buttons_pressed: list[int]) -> bool:
         if buttons_pressed == [KeyboardManager.LEFT]:
             self._contrast = max(0, self._contrast - 5)
         elif buttons_pressed == [KeyboardManager.RIGHT]:
             self._contrast = min(255, self._contrast + 5)
         elif buttons_pressed == [KeyboardManager.CENTER]:
-            self._screen_manager.pop_screen()
+            await self._screen_manager.pop_screen()
+        else:
+            return False
 
         logging.debug("setting contrast to %d", self._contrast)
         self._disp.set_contrast(self._contrast)
         self._pbar.set_value(self._contrast)
+        return True
 
-    def widgets(self):
+    def widgets(self) -> list[Widget]:
         return [self._pbar, self._label]

@@ -1,6 +1,7 @@
+import asyncio
+from typing import AsyncIterator
+
 import RPi.GPIO as GPIO
-import threading
-import time
 
 
 class KeyboardManager:
@@ -57,13 +58,10 @@ class KeyboardManager:
         }
 
         self._callbacks = []
+        self._poll_task = asyncio.create_task(self.poll_loop())
 
-        self._stop = False
-        self._stopmon = threading.Condition()
-
-        self._thread = threading.Thread(target=self._poll)
-        self._thread.daemon = True
-        self._thread.start()
+    def stop(self):
+        self._poll_task.cancel()
 
     def add_callback(self, callback):
         self._callbacks.append(callback)
@@ -71,25 +69,29 @@ class KeyboardManager:
     def remove_callback(self, callback):
         self._callbacks.remove(callback)
 
-    def stop(self):
-        self._stopmon.acquire()
-        self._stop = True
-        self._stopmon.wait()
-        self._stopmon.release()
-
     def _update(self, state, is_pressed):
         # type: (KeyboardManager, self.ButtonState, bool) -> bool
         if is_pressed:
             state.pressed()
             return state.pressed_for == self.FIRST_PRESS_CNT or (
-                state.pressed_for > self.REPEAT_CNT and
-                state.pressed_for % self.REPEAT_EVERY == 0
+                    state.pressed_for > self.REPEAT_CNT and
+                    state.pressed_for % self.REPEAT_EVERY == 0
             )
         else:
             state.released()
             return False
 
-    def _poll(self):
+    async def poll_loop(self):
+        try:
+            async for buttons_pressed in self.poll():
+                for callback in self._callbacks:
+                    buttons_processed = await callback(buttons_pressed)
+                    if buttons_processed:
+                        break
+        except asyncio.CancelledError:
+            pass
+
+    async def poll(self) -> AsyncIterator[list[int]]:
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(self._A_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
         GPIO.setup(self._B_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
@@ -99,37 +101,32 @@ class KeyboardManager:
         GPIO.setup(self._D_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
         GPIO.setup(self._C_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
-        prev_buttons_pressed = []
+        prev_buttons_pressed: list[int] = []
 
-        while not self._stop and GPIO is not None:
-            buttons_pressed = []
+        try:
+            while GPIO is not None:
+                buttons_pressed: list[int] = []
 
-            for pin, button in self._pins_to_buttons.items():
-                state = self._states[button]
-                if self._update(state, not GPIO.input(pin)):
-                    buttons_pressed.append(button)
+                for pin, button in self._pins_to_buttons.items():
+                    state = self._states[button]
+                    if self._update(state, not GPIO.input(pin)):
+                        buttons_pressed.append(button)
 
-            if 0 < len(buttons_pressed) < len(prev_buttons_pressed):
-                # force release all buttons
-                buttons_pressed = []
-                for state in self._states.values():
-                    state.released()
+                if 0 < len(buttons_pressed) < len(prev_buttons_pressed):
+                    # force release all buttons
+                    buttons_pressed = []
+                    for state in self._states.values():
+                        state.released()
 
-            if len(buttons_pressed) > 0:
-                for callback in self._callbacks:
-                    if callback(buttons_pressed):
-                        break
+                if len(buttons_pressed) > 0:
+                    yield buttons_pressed
 
-            prev_buttons_pressed = buttons_pressed
+                prev_buttons_pressed = buttons_pressed
 
-            time.sleep(self.POLL_INTERVAL)
-
-        if GPIO is not None:
-            GPIO.cleanup()
-        if self._stopmon is not None:
-            self._stopmon.acquire()
-            self._stopmon.notifyAll()
-            self._stopmon.release()
+                await asyncio.sleep(self.POLL_INTERVAL)
+        finally:
+            if GPIO is not None:
+                GPIO.cleanup()
 
     class ButtonState:
         def __init__(self, name):
@@ -142,10 +139,10 @@ class KeyboardManager:
                 self.is_pressed = True
             else:
                 self.pressed_for += 1
-            #print(self._name, ': ', self.is_pressed, ': ', self.pressed_for)
+            # print(self._name, ': ', self.is_pressed, ': ', self.pressed_for)
 
         def released(self):
             self.is_pressed = False
             self.pressed_for = 0
-            #if self._name == 'up':
+            # if self._name == 'up':
             #    print(self._name, ': released..')

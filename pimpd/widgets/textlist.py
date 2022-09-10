@@ -5,8 +5,8 @@ from widget import Widget
 
 
 class TextList(Widget):
-    _text_margin = 1
-    _selected = None  # type: None | int
+    _text_margin: int = 1
+    _selected: int | None = None
 
     def __init__(self, position, size, font, empty_items_text):
         super(TextList, self).__init__(position, size)
@@ -22,7 +22,7 @@ class TextList(Widget):
         assert text_height > 0
 
         num_lines = int(math.ceil(float(height) / (text_height + self._text_margin)))
-        self._lines = []
+        self._lines: list[ScrollingText] = []
         for i in range(0, num_lines):
             line_y = i * (text_height + self._text_margin)
             self._lines.append(ScrollingText(
@@ -31,12 +31,22 @@ class TextList(Widget):
                 font,
                 ""
             ))
+        self._selected_line: ScrollingText | None = None
 
-        self._items = []
-        self._selected_item = None
+        self._items: list[str] = []
         self._on_empty_items()
 
-    def _middle_line(self):
+    def start(self):
+        if self._selected_line is not None:
+            self._selected_line.start()
+        return super().start()
+
+    def stop(self):
+        if self._selected_line is not None:
+            self._selected_line.stop()
+        return super().stop()
+
+    def _middle_line(self) -> ScrollingText:
         return self._lines[int((len(self._lines) - 1) / 2)]
 
     def _on_empty_items(self):
@@ -54,13 +64,13 @@ class TextList(Widget):
             l.set_scroll(False)
 
     @property
-    def selected(self):
+    def selected(self) -> int | None:
         return self._selected
 
-    def set_selected(self, selected):
+    def set_selected(self, selected: int):
         self._selected = max(0, min(selected, len(self._items) - 1))
 
-    def set_items(self, items):
+    def set_items(self, items: list[str]):
         self._items = items
 
         if len(items) == 0:
@@ -90,14 +100,10 @@ class TextList(Widget):
             self._update_lines()
             self._need_refresh = True
 
-    def tick(self):
-        if self._selected_item is not None:
-            self._selected_item.tick()
-
     def need_refresh(self):
         if super(TextList, self).need_refresh():
             return True
-        return self._selected_item is not None and self._selected_item.need_refresh()
+        return self._selected_line is not None and self._selected_line.need_refresh()
 
     def _update_lines(self):
         self._reset_lines()
@@ -140,8 +146,11 @@ class TextList(Widget):
             line.set_text(self._items[s])
             line.set_scroll(s == self._selected)
             line.set_invert(s == self._selected)
-            if s == self._selected:
-                self._selected_item = line
+            if s == self._selected and self._selected_line != line:
+                if self._selected_line is not None:
+                    self._selected_line.stop()
+                self._selected_line = line
+                self._selected_line.start()
             s = (s + 1) % k
 
     def _draw(self, img, draw):

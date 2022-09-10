@@ -1,3 +1,5 @@
+from typing import Tuple
+
 from PIL import ImageDraw
 from PIL import Image
 from widget import Widget
@@ -6,7 +8,7 @@ from widget import Widget
 class PlayingWidget(Widget):
     STOPPED, PAUSED, PLAYING = (1, 2, 3)
 
-    def __init__(self, position, size):
+    def __init__(self, position: Tuple[int, int], size: Tuple[int, int]) -> None:
         super(PlayingWidget, self).__init__(position, size)
         self._need_refresh = None
         self._status = PlayingWidget.STOPPED
@@ -20,8 +22,7 @@ class PlayingWidget(Widget):
             self._need_refresh = True
             self._status = status
 
-    def _draw(self, img, draw):
-        # type: (PlayingWidget, Image, ImageDraw) -> None
+    def _draw(self, img: Image, draw: ImageDraw) -> None:
         w = self._size[0]
         h = self._size[1]
         if self._status == PlayingWidget.STOPPED:

@@ -1,3 +1,5 @@
+import asyncio
+
 from screen import Screen
 from widgets.textlist import TextList
 from keyboardmanager import KeyboardManager
@@ -23,10 +25,10 @@ class PlayListsScreen(Screen):
     def widgets(self):
         return [self._tlist]
 
-    def activate(self):
-        super(PlayListsScreen, self).activate()
+    async def activate(self):
+        await super(PlayListsScreen, self).activate()
         if self._client.connected:
-            lists = self._client.listplaylists()
+            lists = await self._client.listplaylists()
             self._playlists = [t['playlist'] for t in lists]
             self._tlist.set_items(self._playlists)
             if self._current is not None:
@@ -35,22 +37,30 @@ class PlayListsScreen(Screen):
         else:
             logging.info("Can't load playlists: not connected yet")
 
-    def on_keyboard_event(self, buttons_pressed):
-        self._last_update = time.time()
+    async def on_keyboard_event(self, buttons_pressed: list[int]) -> bool:
         if buttons_pressed == [KeyboardManager.CENTER] or buttons_pressed == [KeyboardManager.RIGHT]:
             self._current = self._tlist.selected
             if self._current is not None:
                 pl = self._playlists[self._current]
-                self._client.play_playlist(pl)
-            self._screen_manager.pop_screen()
+                await self._client.play_playlist(pl)
+            await self._screen_manager.pop_screen()
         elif buttons_pressed == [KeyboardManager.UP]:
             self._tlist.select_previous()
         elif buttons_pressed == [KeyboardManager.DOWN]:
             self._tlist.select_next()
         elif buttons_pressed == [KeyboardManager.LEFT]:
-            self._screen_manager.pop_screen()
+            await self._screen_manager.pop_screen()
+        else:
+            return False
 
-    def tick(self):
-        super(PlayListsScreen, self).tick()
-        if time.time() - self._last_update > PlayListsScreen.TIMEOUT:
-            self._screen_manager.pop_screen()
+        self._last_update = time.time()
+        return True
+
+    async def _update_loop(self):
+        try:
+            while True:
+                await asyncio.sleep(1)
+                if time.time() - self._last_update > PlayListsScreen.TIMEOUT:
+                    await self._screen_manager.pop_screen()
+        except asyncio.CancelledError:
+            pass

@@ -24,7 +24,7 @@ class WidgetsTestScreen(Screen):
         # self._status.set_draw_border(True)
         self._contrast_screen = contrast_screen
 
-    def on_keyboard_event(self, buttons_pressed):
+    async def on_keyboard_event(self, buttons_pressed: list[int]) -> bool:
         if buttons_pressed == [KeyboardManager.UP]:
             self._tlist.select_previous()
         elif buttons_pressed == [KeyboardManager.DOWN]:
@@ -47,7 +47,11 @@ class WidgetsTestScreen(Screen):
             self._screen_manager.undim()
             self._status.set_status(PlayingWidget.PAUSED)
         elif buttons_pressed == [KeyboardManager.A, KeyboardManager.B]:
-            self._screen_manager.set_screen(self._contrast_screen)
+            await self._screen_manager.set_screen(self._contrast_screen)
+        else:
+            return False
+
+        return True
 
     def widgets(self):
         return [self._pbar, self._tlist, self._stext, self._status]

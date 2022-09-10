@@ -1,50 +1,40 @@
+import asyncio
+
 from widget import Widget
 from keyboardmanager import KeyboardManager
-from collections import deque
 import screenmanager
-import threading
-import time
 
 
 class Screen(object):
-    def __init__(self, screen_manager, keyboard_manager):
-        # type: (Screen, screenmanager.ScreenManager, KeyboardManager) -> None
+    def __init__(self, screen_manager: screenmanager.ScreenManager, keyboard_manager: KeyboardManager) -> None:
         self._screen_manager = screen_manager
         self._keyboard_manager = keyboard_manager
-        self._unprocessed_events = deque()
-        self._lock = threading.Condition()
-        self._active = False
-        self._last_update = time.time()
+        self._update_task: asyncio.Task | None = None
 
-    def widgets(self):
-        # type: () -> [Widget]
+    def widgets(self) -> list[Widget]:
         return []
 
-    def activate(self):
+    async def activate(self):
+        if self.active():
+            raise "screen already activated!"
+        self._update_task = asyncio.create_task(self._update_loop())
         self._keyboard_manager.add_callback(self._keyboard_handler)
-        self._active = True
 
     def deactivate(self):
+        if not self.active():
+            raise "screen already deactivated!"
+        self._update_task.cancel()
+        self._update_task = None
         self._keyboard_manager.remove_callback(self._keyboard_handler)
-        self._active = False
 
-    def _keyboard_handler(self, buttons_pressed):
-        self._lock.acquire()
-        self._unprocessed_events.append(buttons_pressed)
-        self._lock.release()
-        return True
+    def active(self) -> bool:
+        return self._update_task is not None
 
-    def process_keyboard_events(self):
-        # must periodically be called by the main thread to process pending events
-        self._lock.acquire()
-        for buttons in self._unprocessed_events:
-            self.on_keyboard_event(buttons)
-        self._unprocessed_events.clear()
-        self._lock.release()
+    async def _keyboard_handler(self, buttons_pressed: list[int]) -> bool:
+        return await self.on_keyboard_event(buttons_pressed)
 
-    def on_keyboard_event(self, buttons_pressed):
-        # this function will always be called on the main thread
-        pass
+    async def on_keyboard_event(self, buttons_pressed: list[int]) -> bool:
+        return False
 
     def on_screen_off(self):
         pass
@@ -52,5 +42,5 @@ class Screen(object):
     def on_screen_on(self):
         pass
 
-    def tick(self):
+    async def _update_loop(self):
         pass

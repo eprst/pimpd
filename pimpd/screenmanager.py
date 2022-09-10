@@ -1,17 +1,19 @@
-import screen
-from collections import deque
-import time
-import traceback
+import asyncio
 import logging
-from PIL import Image
-from PIL import ImageDraw
+import traceback
+from collections import deque
+
+import adafruit_ssd1306
 import board
 import busio
-import adafruit_ssd1306
+from PIL import Image
+from PIL import ImageDraw
+
+import screen
 
 
 class ScreenManager(object):
-    _screen = None  # type: screen.Screen
+    _screen: screen.Screen | None = None
 
     def __init__(self, rotate, refresh_rate):
         self._screen = None
@@ -26,7 +28,7 @@ class ScreenManager(object):
         # RST = 24
         # self._disp = adafruit_ssd1306.SSD1306_128_64(rst=RST)
 
-    def shutdown(self):
+    def stop(self):
         self._kill = True
 
     @property
@@ -36,28 +38,28 @@ class ScreenManager(object):
     def is_screen_off(self):
         return self._screen_off
 
-    def set_screen(self, screen):
+    async def set_screen(self, _screen):
         if self._screen is not None:
             self._prev_screens.append(self._screen)
-        self._set_screen(screen)
+        await self._set_screen(_screen)
 
-    def pop_screen(self):
+    async def pop_screen(self):
         # go to previous screen
         if len(self._prev_screens) == 0:
-            self._set_screen(None)
+            await self._set_screen(None)
         else:
-            self._set_screen(self._prev_screens.pop())
+            await self._set_screen(self._prev_screens.pop())
 
     def reset_screen(self, screen):
         self._prev_screens.clear()
         self._set_screen(screen)
 
-    def _set_screen(self, screen):
+    async def _set_screen(self, _screen: screen.Screen | None):
         if self._screen is not None:
             self._screen.deactivate()
-        self._screen = screen
+        self._screen = _screen
         if self._screen is not None:
-            self._screen.activate()
+            await self._screen.activate()
 
     def dim(self):
         self._disp.contrast(0)
@@ -77,8 +79,7 @@ class ScreenManager(object):
         if self._screen is not None:
             self._screen.on_screen_on()
 
-    def run(self):
-        # starts the main loop in the current thread
+    async def run(self):
         # self._disp.begin()
         self._disp.fill(0)
         self._disp.show()
@@ -87,21 +88,18 @@ class ScreenManager(object):
         height = self._disp.height
         image = Image.new('1', (width, height))
 
-        screen = self._screen
-        if screen is None:
+        current_screen = self._screen
+        if current_screen is None:
             widgets = []
         else:
-            widgets = screen.widgets()
+            widgets = current_screen.widgets()
 
         draw = ImageDraw.Draw(image)
         draw.rectangle((0, 0, width, height), outline=0, fill=0)
 
         while not self._kill:
             try:
-                if screen is not None:
-                    screen.tick()
-
-                global_update = self._redraw or screen != self._screen
+                global_update = self._redraw or current_screen != self._screen
                 self._redraw = False
                 have_updates = global_update
 
@@ -110,17 +108,13 @@ class ScreenManager(object):
                 else:
                     if global_update:
                         draw.rectangle((0, 0, width, height), outline=0, fill=0)
-                        screen = self._screen
-                        if screen is None:
+                        current_screen = self._screen
+                        if current_screen is None:
                             widgets = []
                         else:
-                            widgets = screen.widgets()
-
-                    if screen is not None:
-                        screen.process_keyboard_events()
+                            widgets = current_screen.widgets()
 
                     for w in widgets:
-                        w.tick()
                         if global_update or w.need_refresh():
                             w.refresh(image, draw)
                             have_updates = True
@@ -132,7 +126,9 @@ class ScreenManager(object):
                         self._disp.image(image)
                     self._disp.show()
 
-                time.sleep(self._refresh_rate)
+                await asyncio.sleep(self._refresh_rate)
+            except asyncio.CancelledError:
+                self._kill = True
             except Exception as e:
                 logging.error(e)
                 logging.error(traceback.format_exc())

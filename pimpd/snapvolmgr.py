@@ -14,9 +14,9 @@ class SnapcastVolumeManager(VolumeManager):
         self._id = 0
 
     def _get_id(self):
-        id = self._id
+        _id = self._id
         self._id += 1
-        return id
+        return _id
 
     @property
     def volume(self):

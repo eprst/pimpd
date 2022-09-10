@@ -1,3 +1,4 @@
+import asyncio
 import logging.handlers
 import signal
 import screenmanager
@@ -46,7 +47,8 @@ screen_manager = screenmanager.ScreenManager(ROTATE, REFRESH_RATE)
 
 
 def on_kill(signum, frame):
-    screen_manager.shutdown()
+    keyboard_manager.stop()
+    screen_manager.stop()
 
 
 signal.signal(signal.SIGTERM, on_kill)
@@ -60,12 +62,16 @@ if DIM_AFTER is not None or OFF_AFTER is not None:
             KeyboardManager.CENTER, KeyboardManager.A, KeyboardManager.B])
 
 status_screen = StatusScreen(screen_manager, keyboard_manager, mpd_client)
-main = MainScreen(screen_manager, keyboard_manager, mpd_client, status_screen, volume_manager)
+mainScreen = MainScreen(screen_manager, keyboard_manager, mpd_client, status_screen, volume_manager)
 
-screen_manager.set_screen(main)
 
-screen_manager.run()  # main loop
+async def main():
+    await screen_manager.set_screen(mainScreen)
+    await screen_manager.run()
 
-keyboard_manager.stop()
-if mpd_client.connected:
-    mpd_client.disconnect()
+
+try:
+    asyncio.run(main())
+finally:
+    keyboard_manager.stop()
+    mpd_client.close()
