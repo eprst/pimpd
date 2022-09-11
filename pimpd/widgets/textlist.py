@@ -59,7 +59,7 @@ class TextList(Widget):
 
     def _reset_lines(self):
         for l in self._lines:
-            l.set_text("")
+            l.set_text("--")
             l.set_invert(False)
             l.set_draw_border(False)
             l.set_scroll(False)
@@ -79,7 +79,6 @@ class TextList(Widget):
             self._selected = None
             self._on_empty_items()
         else:
-            # noinspection PyTypeChecker
             if self._selected is None:
                 self._selected = 0
             elif self._selected >= len(items):
@@ -118,7 +117,7 @@ class TextList(Widget):
 
         k = len(self._items)
         n = min(k, len(self._lines))
-        s = self._selected - n / 2 + 1
+        s = self._selected - n // 2 + 1
         # if s < 0:
         #   s += k
         if s < 0:
@@ -143,17 +142,27 @@ class TextList(Widget):
                     line = self._lines[i]
                     line.set_position((self._text_margin, y))
 
-        for i in range(0, n):
-            line = self._lines[i]
-            line.set_text(self._items[s])
-            line.set_scroll(s == self._selected)
-            line.set_invert(s == self._selected)
-            if s == self._selected and self._selected_line != line:
-                if self._selected_line is not None:
-                    self._selected_line.stop()
-                self._selected_line = line
-                self._selected_line.start()
-            s = (s + 1) % k
+        print("_update_lines 3")
+        try:
+            for i in range(0, n):
+                line = self._lines[i]
+                line.set_text(self._items[s])
+                line.set_scroll(s == self._selected)
+                line.set_invert(s == self._selected)
+                if s == self._selected and self._selected_line != line:
+                    if self._selected_line is not None:
+                        print("u_l before stop")
+                        self._selected_line.stop()
+                        print("u_l after stop")
+                    self._selected_line = line
+                    print("u_l before start")
+                    self._selected_line.start()
+                    print("u_l before stop")
+                s = (s + 1) % k
+        except:
+            import traceback
+            traceback.print_exc()
+        print("_update_lines 4")
 
     def _draw(self, img, draw):
         super(TextList, self)._draw(img, draw)

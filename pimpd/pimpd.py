@@ -56,8 +56,15 @@ async def main():
 
     try:
         def on_kill(signum, frame):
+            for t in asyncio.all_tasks():
+                t.print_stack()
+                t.cancel()
+
             mpd_client.close()
             keyboard_manager.stop()
+            # TODO use this for a clean shutdown: https://gist.github.com/escline/ceba5db17bf659ef93c14b0c13f63719
+            asyncio.get_event_loop().stop()
+            asyncio.get_event_loop().close()
 
         signal.signal(signal.SIGTERM, on_kill)
         signal.signal(signal.SIGINT, on_kill)
@@ -66,17 +73,16 @@ async def main():
         main_screen = MainScreen(screen_manager, keyboard_manager, mpd_client, status_screen, volume_manager)
         await screen_manager.set_screen(main_screen)
 
-        if DIM_AFTER is not None or OFF_AFTER is not None:
-            Dimmer(screen_manager, keyboard_manager, DIM_AFTER, OFF_AFTER,
-                   # these buttons must be reported to the current screen even if they were used to wake screen up
-                   # currently only <UP> is consumed, rest wake up the screen and are passed through
-                   [KeyboardManager.RIGHT, KeyboardManager.DOWN, KeyboardManager.LEFT,
-                    KeyboardManager.CENTER, KeyboardManager.A, KeyboardManager.B])
+#         if DIM_AFTER is not None or OFF_AFTER is not None:
+#             Dimmer(screen_manager, keyboard_manager, DIM_AFTER, OFF_AFTER,
+#                    # these buttons must be reported to the current screen even if they were used to wake screen up
+#                    # currently only <UP> is consumed, rest wake up the screen and are passed through
+#                    [KeyboardManager.RIGHT, KeyboardManager.DOWN, KeyboardManager.LEFT,
+#                     KeyboardManager.CENTER, KeyboardManager.A, KeyboardManager.B])
 
         await screen_manager.run()
     finally:
         mpd_client.close()
         keyboard_manager.stop()
-
 
 asyncio.run(main())
