@@ -146,3 +146,15 @@ class KeyboardManager:
             self.pressed_for = 0
             # if self._name == 'up':
             #    print(self._name, ': released..')
+
+
+# async def main():
+#     kmgr = KeyboardManager(True)
+# 
+#     async def h(keys):
+#         print("keys: ", keys)
+# 
+#     kmgr.add_callback(h)
+#     await asyncio.sleep(10)
+# 
+# asyncio.run(main())

@@ -162,6 +162,7 @@ class ReconnectingClient(MPDClient, VolumeManager):
                     await asyncio.sleep(ReconnectingClient.reconnect_sleep_time)
                     logging.info("Retrying")
                 except Exception as e:
+                    logging.exception("connection failure")
                     self.last_connection_failure = u"Fatal: %s" % str(e)
                     self._set_status(self.last_connection_failure)
                     self._on_disconnected()

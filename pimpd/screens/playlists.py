@@ -60,7 +60,7 @@ class PlayListsScreen(Screen):
         try:
             while True:
                 await asyncio.sleep(1)
-                if time.time() - self._last_update > PlayListsScreen.TIMEOUT:
+                if self._last_update is not None and time.time() - self._last_update > PlayListsScreen.TIMEOUT:
                     await self._screen_manager.pop_screen()
         except asyncio.CancelledError:
             pass

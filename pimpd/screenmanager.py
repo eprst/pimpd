@@ -13,7 +13,8 @@ import screen
 
 
 class ScreenManager(object):
-    _screen: screen.Screen | None = None
+    # _screen: screen.Screen|None = None # need python >= 3.10
+    _screen: screen.Screen = None
 
     def __init__(self, rotate, refresh_rate):
         self._screen = None
@@ -28,8 +29,6 @@ class ScreenManager(object):
         # RST = 24
         # self._disp = adafruit_ssd1306.SSD1306_128_64(rst=RST)
 
-    def stop(self):
-        self._kill = True
 
     @property
     def display(self):
@@ -54,7 +53,8 @@ class ScreenManager(object):
         self._prev_screens.clear()
         self._set_screen(screen)
 
-    async def _set_screen(self, _screen: screen.Screen | None):
+    # async def _set_screen(self, _screen: screen.Screen | None):
+    async def _set_screen(self, _screen: screen.Screen):
         if self._screen is not None:
             self._screen.deactivate()
         self._screen = _screen
@@ -97,7 +97,7 @@ class ScreenManager(object):
         draw = ImageDraw.Draw(image)
         draw.rectangle((0, 0, width, height), outline=0, fill=0)
 
-        while not self._kill:
+        while True:
             try:
                 global_update = self._redraw or current_screen != self._screen
                 self._redraw = False
@@ -128,7 +128,7 @@ class ScreenManager(object):
 
                 await asyncio.sleep(self._refresh_rate)
             except asyncio.CancelledError:
-                self._kill = True
+                break
             except Exception as e:
                 logging.error(e)
                 logging.error(traceback.format_exc())

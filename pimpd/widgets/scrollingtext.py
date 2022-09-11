@@ -15,6 +15,7 @@ class ScrollingText(Widget):
         self._offset = None
         self._font = font
         self._text: str = ""
+        self._text_size = None
         self.set_text(text)
         self._scroll = True
 
@@ -69,5 +70,6 @@ class ScrollingText(Widget):
     def _draw(self, img: Image, draw: ImageDraw) -> None:
         super(ScrollingText, self)._draw(img, draw)
         # self._update_offset()
-        y_offset = max(0, (self._size[1] - self._text_size[1])/2)
-        draw.text((-self._offset, y_offset), self._text, font=self._font, fill=1)
+        if self._text_size is not None:
+            y_offset = max(0, (self._size[1] - self._text_size[1])/2)
+            draw.text((-self._offset, y_offset), self._text, font=self._font, fill=1)

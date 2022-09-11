@@ -6,7 +6,8 @@ from widget import Widget
 
 class TextList(Widget):
     _text_margin: int = 1
-    _selected: int | None = None
+    # _selected: int | None = None # python 3.10
+    _selected: int = None
 
     def __init__(self, position, size, font, empty_items_text):
         super(TextList, self).__init__(position, size)
@@ -64,7 +65,8 @@ class TextList(Widget):
             l.set_scroll(False)
 
     @property
-    def selected(self) -> int | None:
+    def selected(self) -> int:
+    # def selected(self) -> int | None: # python 3.10
         return self._selected
 
     def set_selected(self, selected: int):

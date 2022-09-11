@@ -80,8 +80,8 @@ class MainScreen(Screen):
             await self._screen_manager.set_screen(self._status_screen)
 
     async def _update_status_connected(self):
-        st = self._client.status()
-        cs = self._client.current_song()
+        st = await self._client.status()
+        cs = await self._client.currentsong()
 
         state = st.get('state', 'stop')  # play/stop/pause
         if state == 'play':

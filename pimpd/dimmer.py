@@ -44,7 +44,7 @@ class Dimmer(object):
         except asyncio.CancelledError:
             pass
 
-    def _on_kbd(self, buttons):
+    async def _on_kbd(self, buttons):
         self._last_activity = time.time()
         processed = False
         logging.info("Dimmer::on_kbd, off:{}, dimmed:{}".format(self._off, self._dimmed))
