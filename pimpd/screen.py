@@ -20,6 +20,8 @@ class Screen(object):
             raise "screen already activated!"
         self._update_task = asyncio.create_task(self._update_loop())
         self._keyboard_manager.add_callback(self.on_keyboard_event)
+        for w in self.widgets():
+            w.start()
 
     def deactivate(self):
         if not self.active():
@@ -27,6 +29,8 @@ class Screen(object):
         self._update_task.cancel()
         self._update_task = None
         self._keyboard_manager.remove_callback(self.on_keyboard_event)
+        for w in self.widgets():
+            w.stop()
 
     def active(self) -> bool:
         return self._update_task is not None

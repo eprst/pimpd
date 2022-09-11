@@ -11,7 +11,8 @@ class Widget(object):
         self._draw_border = False
         self._invert = False
         self._need_refresh = True
-        self._update_task: asyncio.Task | None = None
+        # self._update_task: asyncio.Task | None = None python 3.10
+        self._update_task: asyncio.Task = None
 
     def set_position(self, position: Tuple[int, int]):
         self._position = position
