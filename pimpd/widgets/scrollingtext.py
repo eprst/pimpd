@@ -16,9 +16,10 @@ class ScrollingText(Widget):
         self._font = font
         self._text: str = ""
         self._text_size = None
-        self.set_text(text)
         self._scroll = True
+        self._text_event = asyncio.Event()
         self._scroll_event = asyncio.Event()
+        self.set_text(text)
 
     # noinspection PyAttributeOutsideInit
     def set_text(self, text: str):
@@ -34,6 +35,7 @@ class ScrollingText(Widget):
                     logging.warning(u"Warning! widget height {} is smaller than font height {} (text: '{}')".format(
                         self._size[1], self._text_size[1], text
                     ))
+                self._text_event.set()
             except IOError:
                 self.set_text(u"err")  # getting 'IOError: invalid composite glyph' periodically
 
@@ -55,6 +57,8 @@ class ScrollingText(Widget):
     async def _update_loop(self):
         try:
             while True:
+                if self._text_size is None:
+                    await self._text_event.wait()
                 if self._scroll:
                     await asyncio.sleep(self.SCROLL_DELAY)
                     if self._reversing:
