@@ -6,6 +6,7 @@ from collections import deque
 import adafruit_ssd1306
 import board
 import busio
+import typing
 from PIL import Image
 from PIL import ImageDraw
 
@@ -13,8 +14,7 @@ import screen
 
 
 class ScreenManager(object):
-    # _screen: screen.Screen|None = None # need python >= 3.10
-    _screen: screen.Screen = None
+    _screen: typing.Union[screen.Screen, None] = None
 
     def __init__(self, rotate, refresh_rate):
         self._screen = None
@@ -28,7 +28,6 @@ class ScreenManager(object):
         self._disp = adafruit_ssd1306.SSD1306_I2C(128, 64, i2c)
         # RST = 24
         # self._disp = adafruit_ssd1306.SSD1306_128_64(rst=RST)
-
 
     @property
     def display(self):
@@ -53,8 +52,7 @@ class ScreenManager(object):
         self._prev_screens.clear()
         self._set_screen(screen)
 
-    # async def _set_screen(self, _screen: screen.Screen | None):
-    async def _set_screen(self, _screen: screen.Screen):
+    async def _set_screen(self, _screen: typing.Union[screen.Screen, None]):
         if self._screen is not None:
             self._screen.deactivate()
         self._screen = _screen

@@ -1,5 +1,7 @@
 import asyncio
 
+import typing
+
 from widget import Widget
 from keyboardmanager import KeyboardManager
 
@@ -9,8 +11,7 @@ class Screen(object):
     def __init__(self, screen_manager, keyboard_manager: KeyboardManager) -> None:
         self._screen_manager = screen_manager
         self._keyboard_manager = keyboard_manager
-        # self._update_task: asyncio.Task | None = None # python 3.10
-        self._update_task: asyncio.Task = None
+        self._update_task: typing.Union[asyncio.Task, None] = None
 
     def widgets(self) -> list[Widget]:
         return []

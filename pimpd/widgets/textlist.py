@@ -1,13 +1,14 @@
 import math
 
+import typing
+
 from widgets.scrollingtext import ScrollingText
 from widget import Widget
 
 
 class TextList(Widget):
     _text_margin: int = 1
-    # _selected: int | None = None # python 3.10
-    _selected: int = None
+    _selected: typing.Union[int, None] = None
 
     def __init__(self, position, size, font, empty_items_text):
         super(TextList, self).__init__(position, size)
@@ -58,15 +59,14 @@ class TextList(Widget):
         self._selected = None
 
     def _reset_lines(self):
-        for l in self._lines:
-            l.set_text("--")
-            l.set_invert(False)
-            l.set_draw_border(False)
-            l.set_scroll(False)
+        for _l in self._lines:
+            _l.set_text("")
+            _l.set_invert(False)
+            _l.set_draw_border(False)
+            _l.set_scroll(False)
 
     @property
-    def selected(self) -> int:
-    # def selected(self) -> int | None: # python 3.10
+    def selected(self) -> typing.Union[int, None]:
         return self._selected
 
     def set_selected(self, selected: int):
@@ -142,29 +142,19 @@ class TextList(Widget):
                     line = self._lines[i]
                     line.set_position((self._text_margin, y))
 
-        print("_update_lines 3")
-        try:
-            for i in range(0, n):
-                line = self._lines[i]
-                line.set_text(self._items[s])
-                line.set_scroll(s == self._selected)
-                line.set_invert(s == self._selected)
-                if s == self._selected and self._selected_line != line:
-                    if self._selected_line is not None:
-                        print("u_l before stop")
-                        self._selected_line.stop()
-                        print("u_l after stop")
-                    self._selected_line = line
-                    print("u_l before start")
-                    self._selected_line.start()
-                    print("u_l before stop")
-                s = (s + 1) % k
-        except:
-            import traceback
-            traceback.print_exc()
-        print("_update_lines 4")
+        for i in range(0, n):
+            line = self._lines[i]
+            line.set_text(self._items[s])
+            line.set_scroll(s == self._selected)
+            line.set_invert(s == self._selected)
+            if s == self._selected and self._selected_line != line:
+                if self._selected_line is not None:
+                    self._selected_line.stop()
+                self._selected_line = line
+                self._selected_line.start()
+            s = (s + 1) % k
 
     def _draw(self, img, draw):
         super(TextList, self)._draw(img, draw)
-        for l in self._lines:
-            l.refresh(img, draw)
+        for _l in self._lines:
+            _l.refresh(img, draw)

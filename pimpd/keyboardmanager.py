@@ -150,11 +150,11 @@ class KeyboardManager:
 
 # async def main():
 #     kmgr = KeyboardManager(True)
-# 
+#
 #     async def h(keys):
 #         print("keys: ", keys)
-# 
+#
 #     kmgr.add_callback(h)
 #     await asyncio.sleep(10)
-# 
+#
 # asyncio.run(main())

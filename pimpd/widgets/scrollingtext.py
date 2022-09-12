@@ -56,7 +56,6 @@ class ScrollingText(Widget):
         try:
             while True:
                 if self._scroll:
-                    print("scrolling: ", self._text, ", offset: ", self._offset)
                     await asyncio.sleep(self.SCROLL_DELAY)
                     if self._reversing:
                         self._offset -= 1
@@ -72,15 +71,13 @@ class ScrollingText(Widget):
 
                     self._need_refresh = True
                 else:
-                    print("not scrolling: ", self._text)
                     await self._scroll_event.wait()
         except asyncio.CancelledError:
-            print("cancelled scroll: ", self._text)
             pass
 
     def _draw(self, img: Image, draw: ImageDraw) -> None:
         super(ScrollingText, self)._draw(img, draw)
         # self._update_offset()
         if self._text_size is not None:
-            y_offset = max(0, (self._size[1] - self._text_size[1])/2)
+            y_offset = max(0, (self._size[1] - self._text_size[1]) // 2)
             draw.text((-self._offset, y_offset), self._text, font=self._font, fill=1)

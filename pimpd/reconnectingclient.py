@@ -145,7 +145,6 @@ class ReconnectingClient(MPDClient, VolumeManager):
 
             if self._connected or not self._keep_reconnecting:
                 logging.info('Waiting')
-                print("connected={}, keep_reconnecting={}".format(self._connected, self._keep_reconnecting))
                 await self._disconnected_event.wait()
                 self._disconnected_event.clear()
                 # await asyncio.sleep(ReconnectingClient.reconnect_sleep_time)

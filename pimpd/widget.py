@@ -1,6 +1,7 @@
 import asyncio
 from typing import Tuple
 
+import typing
 from PIL import ImageDraw, Image, ImageChops
 
 
@@ -11,8 +12,7 @@ class Widget(object):
         self._draw_border = False
         self._invert = False
         self._need_refresh = True
-        # self._update_task: asyncio.Task | None = None python 3.10
-        self._update_task: asyncio.Task = None
+        self._update_task: typing.Union[asyncio.Task, None] = None
 
     def set_position(self, position: Tuple[int, int]):
         self._position = position
@@ -57,7 +57,7 @@ class Widget(object):
         buf = Image.new('1', self._size)
         buf_draw = ImageDraw.Draw(buf)
         sz = (max(0, self._size[0] - 1), max(0, self._size[1] - 1))
-        
+
         self._draw(buf, buf_draw)
 
         if self._draw_border:
