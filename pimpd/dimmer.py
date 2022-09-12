@@ -50,13 +50,13 @@ class Dimmer(object):
         processed = False
         # logging.info("Dimmer::on_kbd, off:{}, dimmed:{}".format(self._off, self._dimmed))
         if self._off:
-            logging.info("Dimmer: screen on")
+            # logging.info("Dimmer: screen on")
             self._smgr.screen_on()
             self._dimmed = False
             self._off = False
             processed = len(buttons) == 1 and buttons[0] not in self._pass_through_buttons
         if self._dimmed:
-            logging.info("Dimmer: un-dimming")
+            # logging.info("Dimmer: un-dimming")
             self._smgr.undim()
             self._dimmed = False
             self._off = False
