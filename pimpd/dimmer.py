@@ -1,9 +1,11 @@
 import time
 import logging
 import asyncio
+from contextlib import suppress
 
 import keyboardmanager
 import screenmanager
+import tasklogger
 
 
 class Dimmer(object):
@@ -23,10 +25,10 @@ class Dimmer(object):
         self._off = False
 
         keyboard_manager.add_callback(self._on_kbd)
-        self._update_task = asyncio.create_task(self._loop())
+        self._update_task = tasklogger.create_task(self._loop())
 
     async def _loop(self):
-        try:
+        with suppress(asyncio.CancelledError):
             while True:
                 await asyncio.sleep(1)
                 sla = time.time() - self._last_activity
@@ -41,8 +43,6 @@ class Dimmer(object):
                     self._smgr.screen_off()
                     self._dimmed = False
                     self._off = True
-        except asyncio.CancelledError:
-            pass
 
     async def _on_kbd(self, buttons):
         self._last_activity = time.time()

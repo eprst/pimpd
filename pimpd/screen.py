@@ -1,9 +1,9 @@
 import asyncio
-
 import typing
 
 from widget import Widget
 from keyboardmanager import KeyboardManager
+import tasklogger
 
 
 class Screen(object):
@@ -19,7 +19,7 @@ class Screen(object):
     async def activate(self):
         if self.active():
             raise "screen already activated!"
-        self._update_task = asyncio.create_task(self._update_loop())
+        self._update_task = tasklogger.create_task(self._update_loop())
         self._keyboard_manager.add_callback(self.on_keyboard_event)
         for w in self.widgets():
             w.start()

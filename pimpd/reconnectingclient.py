@@ -5,6 +5,7 @@ import traceback
 
 import mpd
 from mpd.asyncio import MPDClient
+import tasklogger
 
 from volumemanager import VolumeManager
 
@@ -24,9 +25,13 @@ class ReconnectingClient(MPDClient, VolumeManager):
         self._connected_callbacks = []
         self._idle_callbacks = []
         self._keep_reconnecting = False
+        # special handling for Exceptions happening inside mpd/asyncio
+        # which then calls disconnect(). We don't want to stop reconnecting
+        # in such cases
+        self._disconnect_not_caused_by_us = False
 
         self._disconnected_event = asyncio.Event()
-        self._reconnect_task = asyncio.create_task(self._reconnect_loop())
+        self._reconnect_task = tasklogger.create_task(self._reconnect_loop())
         self._reconnect_task.add_done_callback(self._handle_reconnect_result)
 
         self._idle_task: asyncio.Task | None = None
@@ -57,7 +62,10 @@ class ReconnectingClient(MPDClient, VolumeManager):
         self._idle_callbacks.remove(callback)
 
     def disconnect(self):
-        self._keep_reconnecting = False
+        if self._disconnect_not_caused_by_us:
+            self._disconnect_not_caused_by_us = False
+        else:
+            self._keep_reconnecting = False
         self._disconnect()
 
     def close(self):
@@ -89,14 +97,31 @@ class ReconnectingClient(MPDClient, VolumeManager):
     @property
     async def volume(self) -> int:
         if self._connected:
-            status = await MPDClient.status(self)
-            return max(0, int(status['volume']))  # treat -1 as 0
+            try:
+                status = await asyncio.wait_for(MPDClient.status(self), timeout=1)
+                res = max(0, int(status['volume']))  # treat -1 as 0
+                return res
+            except asyncio.TimeoutError:
+                # pympd bug workaround
+                return 0
+            except mpd.base.ProtocolError:
+                # pympd glitch
+                self._disconnect_not_caused_by_us = True
+                raise
         else:
             return 0
 
     async def set_volume(self, volume: int) -> None:
         if self._connected:
-            await MPDClient.setvol(self, volume)
+            try:
+                await asyncio.wait_for(MPDClient.setvol(self, volume), timeout=1)
+            except asyncio.TimeoutError:
+                # pympd bug workaround
+                return 0
+            except mpd.base.ProtocolError:
+                # pympd glitch
+                self._disconnect_not_caused_by_us = True
+                self._disconnect()
 
     async def play_playlist(self, name: str) -> None:
         await self.clear()
@@ -124,7 +149,7 @@ class ReconnectingClient(MPDClient, VolumeManager):
         for callback in self._connected_callbacks:
             await callback()
         self._disconnected_event.clear()
-        self._idle_task = asyncio.create_task(self._idle_loop())
+        self._idle_task = tasklogger.create_task(self._idle_loop())
 
     def _on_disconnected(self):
         self._connected = False
@@ -188,6 +213,11 @@ class ReconnectingClient(MPDClient, VolumeManager):
                 except mpd.base.ConnectionError as e:
                     self._connection_lost(str(e))
                     raise
+                except mpd.base.ProtocolError:
+                    # pympd glitch
+                    self._disconnect_not_caused_by_us = True
+                    raise
+
 
             return wrapper
         else:

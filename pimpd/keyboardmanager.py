@@ -2,6 +2,7 @@ import asyncio
 from typing import AsyncIterator
 
 import RPi.GPIO as GPIO
+import tasklogger
 
 
 class KeyboardManager:
@@ -58,7 +59,7 @@ class KeyboardManager:
         }
 
         self._callbacks = []
-        self._poll_task = asyncio.create_task(self.poll_loop())
+        self._poll_task = tasklogger.create_task(self.poll_loop())
 
     def stop(self):
         self._poll_task.cancel()

@@ -3,6 +3,7 @@ from typing import Tuple
 
 import typing
 from PIL import ImageDraw, Image, ImageChops
+import tasklogger
 
 
 class Widget(object):
@@ -40,7 +41,7 @@ class Widget(object):
     def start(self):
         if self._update_task is not None:
             raise "widget already started!"
-        self._update_task = asyncio.create_task(self._update_loop())
+        self._update_task = tasklogger.create_task(self._update_loop())
         pass
 
     def stop(self):

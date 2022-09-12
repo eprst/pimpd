@@ -1,16 +1,34 @@
-from __future__ import print_function
+# from __future__ import print_function
 
 import asyncio
 import logging
 
-import reconnectingclient
+# import reconnectingclient
+from mpd.asyncio import MPDClient
 
-client: reconnectingclient.ReconnectingClient | None = None
+client = None
 
 
 async def connected():
     print("Connected!")
-    await update()
+    asyncio.create_task(idle_loop())
+    while True:
+        try:
+           await asyncio.sleep(0.1)
+           st = await client.status()
+           volume = max(0, int(st.get('volume', 0)))
+           await client.setvol(volume+1)
+           await asyncio.sleep(0.09)
+           await client.status()
+           await asyncio.sleep(0.01)
+           await client.status()
+           await asyncio.sleep(0.01)
+           await client.setvol(volume)
+           await asyncio.sleep(0.09)
+           await client.status()
+        except Exception as e:
+            print(e)
+    # await update()
     # while client.connected:
     #     print("tick")
     #     try:
@@ -21,17 +39,21 @@ async def connected():
     #         print("Connection lost, I'm done")
 
 
+async def idle_loop():
+    async for s in client.idle():
+        await idle(s)
+
 async def idle(subsystems: list[str]) -> None:
     print("Idle change in", subsystems)
-    await update()
+    # await update()
 
 
 async def update():
     print("update()")
-    cs = await client.currentsong()
-    print('artist: {}'.format(cs.get('artist', '???')))
-    print('title: {}'.format(cs.get('title', None)))
-    print('file: {}'.format(cs.get('file', None)))
+    # cs = await client.currentsong()
+    # print('artist: {}'.format(cs.get('artist', '???')))
+    # print('title: {}'.format(cs.get('title', None)))
+    # print('file: {}'.format(cs.get('file', None)))
 
     st = await client.status()
     elapsed = float(st.get('elapsed', 0.0))
@@ -55,16 +77,18 @@ async def update():
 
 async def main():
     global client
-    client = reconnectingclient.ReconnectingClient()
+    client = MPDClient()
+    #client = reconnectingclient.ReconnectingClient()
 
     try:
         client.timeout = 5
         # client.connect("192.168.1.155", 6600)
-        client.connect("127.0.0.1", 6600)
-        await client.add_connected_callback(connected)
-        client.add_idle_callback(idle)
+        await client.connect("127.0.0.1", 6600)
+        await connected()
+        # await client.add_connected_callback(connected)
+        # client.add_idle_callback(idle)
 
-        await asyncio.Event().wait()  # sleep forever
+        # await asyncio.Event().wait()  # sleep forever
 
         # while True:
         #     print("tick")

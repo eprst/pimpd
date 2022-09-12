@@ -4,6 +4,7 @@ import socket
 import mpd
 import fonts
 import logging
+import asyncio
 
 import keyboardmanager
 import reconnectingclient
@@ -133,11 +134,13 @@ class MainScreen(Screen):
                 await self._screen_manager.set_screen(self._play_list_screen)
             elif buttons_pressed == [KeyboardManager.LEFT]:
                 volume = await self._volmgr.volume
+                # await asyncio.sleep(0.09)  # magic to avoid pympd race
                 volume = max(0, volume - MainScreen.VOLUME_STEP)
                 await self._volmgr.set_volume(volume)
                 self._volume.set_value(volume)
             elif buttons_pressed == [KeyboardManager.RIGHT]:
                 volume = await self._volmgr.volume
+                # await asyncio.sleep(0.09)  # magic to avoid pympd race
                 volume = min(100, volume + MainScreen.VOLUME_STEP)
                 await self._volmgr.set_volume(volume)
                 self._volume.set_value(volume)

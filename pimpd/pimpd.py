@@ -63,6 +63,10 @@ async def main():
             tasks = [task for task in asyncio.all_tasks() if task is not asyncio.current_task()]
             for task in tasks:
                 task.print_stack()  # TODO remove
+            mpd_client.close()
+            keyboard_manager.stop()
+            tasks = [task for task in asyncio.all_tasks() if task is not asyncio.current_task()]
+            for task in tasks:
                 task.cancel()
                 with suppress(asyncio.CancelledError):
                     await task
