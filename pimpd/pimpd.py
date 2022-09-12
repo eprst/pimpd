@@ -18,15 +18,15 @@ MPD_TIMEOUT = 5
 ROTATE = True
 
 # Dim screen after this seconds, or None
-DIM_AFTER = 20
+DIM_AFTER = 10
 # Turn screen off after this seconds, or None. Turning screen off greatly reduces CPU usage
-OFF_AFTER = 30
+OFF_AFTER = 20
 
 # Screen refresh rate in seconds
 REFRESH_RATE = 0.1
 
 # Use syslog for logging
-USE_SYSLOG = False
+USE_SYSLOG = True
 
 # End of configuration #####################################################
 
@@ -49,8 +49,16 @@ async def main():
     # may have other implementations in the future (snapcast, alsa)
     volume_manager = mpd_client
 
-    keyboard_manager = KeyboardManager(ROTATE)
     screen_manager = screenmanager.ScreenManager(ROTATE, REFRESH_RATE)
+    keyboard_manager = KeyboardManager(ROTATE)
+
+    # dimmer must register it's keyboard callback first
+    if DIM_AFTER is not None or OFF_AFTER is not None:
+        Dimmer(screen_manager, keyboard_manager, DIM_AFTER, OFF_AFTER,
+               # these buttons must be reported to the current screen even if they were used to wake screen up
+               # currently only <UP> is consumed, rest wake up the screen and are passed through
+               [KeyboardManager.RIGHT, KeyboardManager.DOWN, KeyboardManager.LEFT,
+                KeyboardManager.CENTER, KeyboardManager.A, KeyboardManager.B])
 
     mpd_client.connect(MPD_HOST, MPD_PORT)
 
@@ -58,11 +66,9 @@ async def main():
         async def shutdown(sig, loop):
             from contextlib import suppress
             logging.info('Caught {0}'.format(sig.name))
-            mpd_client.close()
-            keyboard_manager.stop()
-            tasks = [task for task in asyncio.all_tasks() if task is not asyncio.current_task()]
-            for task in tasks:
-                task.print_stack()  # TODO remove
+            # tasks = [task for task in asyncio.all_tasks() if task is not asyncio.current_task()]
+            # for task in tasks:
+            #    task.print_stack()  # TODO remove
             mpd_client.close()
             keyboard_manager.stop()
             tasks = [task for task in asyncio.all_tasks() if task is not asyncio.current_task()]
@@ -79,13 +85,6 @@ async def main():
         status_screen = StatusScreen(screen_manager, keyboard_manager, mpd_client)
         main_screen = MainScreen(screen_manager, keyboard_manager, mpd_client, status_screen, volume_manager)
         await screen_manager.set_screen(main_screen)
-
-        if DIM_AFTER is not None or OFF_AFTER is not None:
-            Dimmer(screen_manager, keyboard_manager, DIM_AFTER, OFF_AFTER,
-                   # these buttons must be reported to the current screen even if they were used to wake screen up
-                   # currently only <UP> is consumed, rest wake up the screen and are passed through
-                   [KeyboardManager.RIGHT, KeyboardManager.DOWN, KeyboardManager.LEFT,
-                    KeyboardManager.CENTER, KeyboardManager.A, KeyboardManager.B])
 
         await screen_manager.run()
     finally:

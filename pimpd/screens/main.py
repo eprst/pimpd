@@ -5,6 +5,7 @@ import mpd
 import fonts
 import logging
 import asyncio
+from contextlib import suppress
 
 import keyboardmanager
 import reconnectingclient
@@ -72,6 +73,12 @@ class MainScreen(Screen):
 
     async def _idle(self, subsystems: list[str]) -> None:
         await self._update_status()
+
+    async def _update_loop(self):
+        with suppress(asyncio.CancelledError):
+            while True:
+                await asyncio.sleep(2)
+                await self._update_status()
 
     async def _update_status(self):
         if self._client.connected:

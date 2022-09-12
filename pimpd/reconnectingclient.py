@@ -59,7 +59,10 @@ class ReconnectingClient(MPDClient, VolumeManager):
         self._idle_callbacks.append(callback)
 
     def remove_idle_callback(self, callback):
-        self._idle_callbacks.remove(callback)
+        try:
+            self._idle_callbacks.remove(callback)
+        except ValueError:
+            pass
 
     def disconnect(self):
         if self._disconnect_not_caused_by_us:

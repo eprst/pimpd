@@ -34,29 +34,32 @@ class Dimmer(object):
                 sla = time.time() - self._last_activity
 
                 if self._dim_after is not None and sla > self._dim_after and not self._dimmed:
-                    logging.info("Dimmer: dimming")
+                    # logging.info("Dimmer: dimming")
                     self._smgr.dim()
                     self._dimmed = True
+                    self._off = False
 
                 if self._off_after is not None and sla > self._off_after and not self._off:
-                    logging.info("Dimmer: screen off")
+                    # logging.info("Dimmer: screen off")
                     self._smgr.screen_off()
-                    self._dimmed = False
+                    self._dimmed = True
                     self._off = True
 
     async def _on_kbd(self, buttons):
         self._last_activity = time.time()
         processed = False
-        logging.info("Dimmer::on_kbd, off:{}, dimmed:{}".format(self._off, self._dimmed))
+        # logging.info("Dimmer::on_kbd, off:{}, dimmed:{}".format(self._off, self._dimmed))
         if self._off:
             logging.info("Dimmer: screen on")
             self._smgr.screen_on()
+            self._dimmed = False
             self._off = False
             processed = len(buttons) == 1 and buttons[0] not in self._pass_through_buttons
         if self._dimmed:
             logging.info("Dimmer: un-dimming")
             self._smgr.undim()
             self._dimmed = False
+            self._off = False
             processed = len(buttons) == 1 and buttons[0] not in self._pass_through_buttons
 
         return processed
