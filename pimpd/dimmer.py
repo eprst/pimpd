@@ -1,5 +1,4 @@
 import time
-import logging
 import asyncio
 from contextlib import suppress
 
@@ -63,3 +62,6 @@ class Dimmer(object):
             processed = len(buttons) == 1 and buttons[0] not in self._pass_through_buttons
 
         return processed
+
+    def is_off(self) -> bool:
+        return self._off

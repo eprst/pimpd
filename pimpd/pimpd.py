@@ -51,14 +51,15 @@ async def main():
 
     screen_manager = screenmanager.ScreenManager(ROTATE, REFRESH_RATE)
     keyboard_manager = KeyboardManager(ROTATE)
+    dimmer = None
 
     # dimmer must register it's keyboard callback first
     if DIM_AFTER is not None or OFF_AFTER is not None:
-        Dimmer(screen_manager, keyboard_manager, DIM_AFTER, OFF_AFTER,
-               # these buttons must be reported to the current screen even if they were used to wake screen up
-               # currently only <UP> is consumed, rest wake up the screen and are passed through
-               [KeyboardManager.RIGHT, KeyboardManager.DOWN, KeyboardManager.LEFT,
-                KeyboardManager.CENTER, KeyboardManager.A, KeyboardManager.B])
+        dimmer = Dimmer(screen_manager, keyboard_manager, DIM_AFTER, OFF_AFTER,
+                        # these buttons must be reported to the current screen even if they were used to wake screen up
+                        # currently only <UP> is consumed, rest wake up the screen and are passed through
+                        [KeyboardManager.RIGHT, KeyboardManager.DOWN, KeyboardManager.LEFT,
+                         KeyboardManager.CENTER, KeyboardManager.A, KeyboardManager.B])
 
     mpd_client.connect(MPD_HOST, MPD_PORT)
 
@@ -83,7 +84,7 @@ async def main():
             loop.add_signal_handler(signame, lambda: asyncio.ensure_future(shutdown(signame, loop)))
 
         status_screen = StatusScreen(screen_manager, keyboard_manager, mpd_client)
-        main_screen = MainScreen(screen_manager, keyboard_manager, mpd_client, status_screen, volume_manager)
+        main_screen = MainScreen(screen_manager, keyboard_manager, mpd_client, status_screen, volume_manager, dimmer)
         await screen_manager.set_screen(main_screen)
 
         await screen_manager.run()

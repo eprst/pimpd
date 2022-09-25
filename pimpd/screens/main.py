@@ -5,6 +5,7 @@ import mpd
 import fonts
 import logging
 import asyncio
+import typing
 from contextlib import suppress
 
 import keyboardmanager
@@ -12,6 +13,7 @@ import reconnectingclient
 import screenmanager
 import screens.status
 import volumemanager
+from dimmer import Dimmer
 from widgets.progressbar import ProgressBar
 from widgets.playing import PlayingWidget
 from screen import Screen
@@ -36,13 +38,15 @@ class MainScreen(Screen):
                  keyboard_manager: keyboardmanager.KeyboardManager,
                  client: reconnectingclient.ReconnectingClient,
                  status_screen: screens.status.StatusScreen,
-                 volmgr: volumemanager.VolumeManager):
+                 volmgr: volumemanager.VolumeManager,
+                 dimmer: typing.Union[Dimmer, None]):
         super(MainScreen, self).__init__(screen_manager, keyboard_manager)
         font = fonts.DEFAULT_FONT_14
 
         self._client = client
         self._status_screen = status_screen
         self._volmgr = volmgr
+        self._dimmer = dimmer
 
         self._status = PlayingWidget((0, 0), (9, 9))
         self._seekbar = ProgressBar((24, 1), (128 - 24, 7), 100)
@@ -78,7 +82,8 @@ class MainScreen(Screen):
         with suppress(asyncio.CancelledError):
             while True:
                 await asyncio.sleep(2)
-                await self._update_status()
+                if self._dimmer is not None and not self._dimmer.is_off:
+                    await self._update_status()
 
     async def _update_status(self):
         if self._client.connected:

@@ -34,6 +34,8 @@ class ReconnectingClient(MPDClient, VolumeManager):
         self._reconnect_task = tasklogger.create_task(self._reconnect_loop())
         self._reconnect_task.add_done_callback(self._handle_reconnect_result)
 
+        self._last_volume = 0
+
         self._idle_task: asyncio.Task | None = None
 
     @staticmethod
@@ -102,11 +104,11 @@ class ReconnectingClient(MPDClient, VolumeManager):
         if self._connected:
             try:
                 status = await asyncio.wait_for(MPDClient.status(self), timeout=1)
-                res = max(0, int(status['volume']))  # treat -1 as 0
-                return res
+                self._last_volume = max(0, int(status['volume']))  # treat -1 as 0
+                return self._last_volume
             except asyncio.TimeoutError:
                 # pympd bug workaround
-                return 0
+                return self._last_volume
             except mpd.base.ProtocolError:
                 # pympd glitch
                 self._disconnect_not_caused_by_us = True
@@ -181,7 +183,10 @@ class ReconnectingClient(MPDClient, VolumeManager):
                 try:
                     await MPDClient.connect(self, self._host, self._port)
                     await self._on_connected()
-                except (socket.error, socket.timeout) as e:
+                except (socket.error, socket.timeout,
+                        # I don't like catching cancelled and timeout errors,
+                        # but that's what mpd/asyncio is throwing sometimes
+                        asyncio.exceptions.CancelledError, asyncio.exceptions.TimeoutError) as e:
                     self.last_connection_failure = u"Non-fatal: %s" % str(e)
                     self._set_status(self.last_connection_failure)
                     self._on_disconnected()
