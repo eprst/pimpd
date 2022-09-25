@@ -183,10 +183,10 @@ class ReconnectingClient(MPDClient, VolumeManager):
                 try:
                     await MPDClient.connect(self, self._host, self._port)
                     await self._on_connected()
-                except (socket.error, socket.timeout,
+                except (socket.error, socket.timeout, mpd.ConnectionError) as e:
                         # I don't like catching cancelled and timeout errors,
                         # but that's what mpd/asyncio is throwing sometimes
-                        asyncio.exceptions.CancelledError, asyncio.exceptions.TimeoutError) as e:
+                        # asyncio.exceptions.CancelledError, asyncio.exceptions.TimeoutError) as e:
                     self.last_connection_failure = u"Non-fatal: %s" % str(e)
                     self._set_status(self.last_connection_failure)
                     self._on_disconnected()
