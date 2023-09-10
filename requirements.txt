@@ -1,4 +1,7 @@
 python-mpd2>=3.0.5
-Pillow>=9.2.0
+Pillow==9.5.0
 ez-setup>=0.9
 aiostream>=0.4.5
+adafruit-circuitpython-ssd1306
+adafruit-blinka
+RPi.GPIO
