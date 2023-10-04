@@ -1,5 +1,5 @@
 python-mpd2>=3.0.5
-Pillow==9.5.0
+Pillow==10.0.1
 ez-setup>=0.9
 aiostream>=0.4.5
 adafruit-circuitpython-ssd1306
